@@ -362,7 +362,9 @@ var accoms = [
 var customEmerg = [{label:'Alva',num:'+44 07857180865'}];
 var reminders = [];
 var fxRate = 9.85;
-var expenses = [];
+window.expenses = window.expenses || [];
+var expenses = window.expenses;
+console.log("Expenses linked to cloud");
 var catTotals = {Transport:0,Food:0,Attractions:0,Shopping:0,Accommodation:0,Other:0};
 var catColors = {Transport:'#3b82f6',Food:'#f59e0b',Attractions:'#8b5cf6',Shopping:'#ec4899',Accommodation:'#10b981',Other:'#6b7280'};
 // Expose mutable data on window so Firebase module can read/write same objects
@@ -371,7 +373,7 @@ window.catTotals   = catTotals;
 window.customEmerg = customEmerg;
 window.reminders   = reminders;
 // itinerary, guideData, flights, accoms exposed after their declarations below
-var itinerary = [
+window.itinerary = window.itinerary || [
   {date:'13 May',day:'Wed',label:'Arrival',type:'travel',activities:[
     {name:'Arrive Heathrow T3',time:'TBC',addr:'London Heathrow, TW6 1QG',cost:'Flight',note:'Take Piccadilly Line or Heathrow Express to central London. Journey ~50min/15min.'}
   ]},
