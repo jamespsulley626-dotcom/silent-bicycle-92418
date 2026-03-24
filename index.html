@@ -348,132 +348,99 @@ body{display:flex;flex-direction:column;min-height:100vh;}
 <script src="https://unpkg.com/firebase@9.23.0/database/dist/firebase-database-compat.js"></script>
 
 <script>
-// ─── FIREBASE INIT ────────────────────────────────────────────────────────────
-var firebaseApp = firebase.initializeApp({
-  apiKey: "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
-  authDomain: "silent-bicycle-92418-671fb.firebaseapp.com",
-  databaseURL: "https://silent-bicycle-92418-671fb-default-rtdb.firebaseio.com",
-  projectId: "silent-bicycle-92418-671fb",
-  storageBucket: "silent-bicycle-92418-671fb.firebasestorage.app",
-  messagingSenderId: "171163448108",
-  appId: "1:171163448108:web:1c3661dbfb514af2c4b289"
-});
-var db = firebase.database();
-var tripRef = db.ref('tripData');
-var _saveTimer = null;
+// ─── SYNC STATUS ─────────────────────────────────────────────────────────────
 var _fbReady = false;
+var _saveTimer = null;
+
+function setSyncStatus(state, msg) {
+  var dot = document.getElementById('sync-dot');
+  var lbl = document.getElementById('sync-label');
+  if(!dot) return;
+  dot.className = 'sync-dot' + (state==='syncing'?' syncing':state==='offline'?' offline':'');
+  if(lbl) lbl.textContent = msg||'Live';
+}
 
 function firebaseSave() {
-  if(!_fbReady) return;
+  if(!_fbReady || !window._tripRef) return;
   clearTimeout(_saveTimer);
   setSyncStatus('syncing','Saving…');
   _saveTimer = setTimeout(function(){
-    // Build guide notes map
-    var guideNotes = {};
-    (guideData||[]).forEach(function(g){ guideNotes[String(g.id)]={notes:g.notes||'',img:g.img||null}; });
-    // Build itinerary edits map (only days that differ from nothing, keyed by index)
-    var itinEdits = {};
-    (itinerary||[]).forEach(function(day,i){ itinEdits[i]={activities:day.activities}; });
-    // Build flight edits (only editable fields)
-    var flightEdits = {};
-    (flights||[]).forEach(function(f){
-      flightEdits[f.id]={num:f.num,dep:f.dep,arr:f.arr,terminal:f.terminal,gate:f.gate,cabin:f.cabin};
-    });
-    // Build accom edits
-    var accomEdits = {};
-    (accoms||[]).forEach(function(a){
-      accomEdits[a.id]={name:a.name,addr:a.addr,nearTube:a.nearTube,checkin:a.checkin,wifi:a.wifi};
-    });
-    var payload = {
-      expenses: expenses||[],
-      catTotals: catTotals||{},
-      guideNotes: guideNotes,
-      guideCustom: (guideData||[]).filter(function(g){return String(g.id).indexOf('custom-')===0;}),
-      customEmerg: customEmerg||[],
-      itinEdits: itinEdits,
-      flightEdits: flightEdits,
-      accomEdits: accomEdits,
-      budgetMax: (document.getElementById('budget-max')||{}).value||'3000'
-    };
-    tripRef.set(payload)
-      .then(function(){ setSyncStatus('online','🟢 Live'); })
-      .catch(function(e){ setSyncStatus('offline','⚠️ Offline'); console.error('FB save:',e); });
+    try {
+      var gn={};
+      (guideData||[]).forEach(function(g){ gn[String(g.id)]={notes:g.notes||'',img:g.img||null}; });
+      var ie={};
+      (itinerary||[]).forEach(function(d,i){ ie[i]={activities:d.activities}; });
+      var fe={};
+      (flights||[]).forEach(function(f){ fe[f.id]={num:f.num,dep:f.dep,arr:f.arr,terminal:f.terminal,gate:f.gate,cabin:f.cabin}; });
+      var ae={};
+      (accoms||[]).forEach(function(a){ ae[a.id]={name:a.name,addr:a.addr,nearTube:a.nearTube,checkin:a.checkin,wifi:a.wifi}; });
+      window._tripRef.set({
+        expenses:expenses||[], catTotals:catTotals||{},
+        guideNotes:gn, guideCustom:(guideData||[]).filter(function(g){return String(g.id).indexOf('custom-')===0;}),
+        customEmerg:customEmerg||[], itinEdits:ie, flightEdits:fe, accomEdits:ae,
+        budgetMax:(document.getElementById('budget-max')||{}).value||'3000'
+      }).then(function(){ setSyncStatus('online','🟢 Live'); })
+        .catch(function(e){ setSyncStatus('offline','⚠️ Offline'); });
+    } catch(e){ console.error('save err',e); }
   }, 800);
 }
 
-// Called after all render functions are defined (at bottom of script)
-// SYNC STRATEGY: Only sync user-generated data. Never overwrite built-in defaults.
-// Synced: expenses, budget, customEmerg, guideNotes, guideCustom, accomEdits, flightEdits
-// NOT synced: itinerary default data, guideData defaults (too large, causes blank screens)
-function initFirebaseListener() {
-  setSyncStatus('syncing','Connecting…');
-  var isFirst = true;
-  tripRef.on('value', function(snap){
-    var val = snap.val();
+// initFirebase is called via setTimeout AFTER init render — guarantees SDK is loaded
+function initFirebase() {
+  try {
+    if(typeof firebase === 'undefined'){ setSyncStatus('offline','SDK unavailable'); return; }
+    if(!firebase.apps || !firebase.apps.length){
+      firebase.initializeApp({
+        apiKey:"AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
+        authDomain:"silent-bicycle-92418-671fb.firebaseapp.com",
+        databaseURL:"https://silent-bicycle-92418-671fb-default-rtdb.firebaseio.com",
+        projectId:"silent-bicycle-92418-671fb",
+        storageBucket:"silent-bicycle-92418-671fb.firebasestorage.app",
+        messagingSenderId:"171163448108",
+        appId:"1:171163448108:web:1c3661dbfb514af2c4b289"
+      });
+    }
+    window._tripRef = firebase.database().ref('tripData');
     _fbReady = true;
-    if(val){
-      // ── Budget & expenses ──
-      if(val.expenses && Array.isArray(val.expenses)) expenses = val.expenses;
-      if(val.catTotals && typeof val.catTotals==='object') catTotals = val.catTotals;
-      if(val.budgetMax){ var bm=document.getElementById('budget-max'); if(bm) bm.value=val.budgetMax; }
-      // ── Emergency contacts ──
-      if(val.customEmerg && Array.isArray(val.customEmerg)) customEmerg = val.customEmerg;
-      // ── Guide notes only (never overwrite full guideData) ──
-      if(val.guideNotes && typeof val.guideNotes==='object'){
-        Object.keys(val.guideNotes).forEach(function(id){
+    setSyncStatus('syncing','Connecting…');
+    window._tripRef.on('value', function(snap){
+      try {
+        var val = snap.val();
+        if(!val){ setSyncStatus('online','🟢 Ready'); return; }
+        if(val.expenses && Array.isArray(val.expenses)) expenses = val.expenses;
+        if(val.catTotals) catTotals = val.catTotals;
+        if(val.budgetMax){ var bm=document.getElementById('budget-max'); if(bm) bm.value=val.budgetMax; }
+        if(val.customEmerg && Array.isArray(val.customEmerg)) customEmerg = val.customEmerg;
+        if(val.guideNotes){ Object.keys(val.guideNotes).forEach(function(id){
           var g=guideData.find(function(x){return String(x.id)===String(id);});
-          if(g){ g.notes=val.guideNotes[id].notes||''; g.img=val.guideNotes[id].img||null; }
-        });
-      }
-      // ── Custom guide cards added by user ──
-      if(val.guideCustom && Array.isArray(val.guideCustom)){
-        val.guideCustom.forEach(function(g){
+          if(g){g.notes=val.guideNotes[id].notes||'';g.img=val.guideNotes[id].img||null;}
+        });}
+        if(val.guideCustom && Array.isArray(val.guideCustom)){ val.guideCustom.forEach(function(g){
           if(!guideData.find(function(x){return String(x.id)===String(g.id);})) guideData.push(g);
-        });
-      }
-      // ── Flight edits (only editable fields, not whole array) ──
-      if(val.flightEdits && typeof val.flightEdits==='object'){
-        Object.keys(val.flightEdits).forEach(function(fid){
+        });}
+        if(val.flightEdits){ Object.keys(val.flightEdits).forEach(function(fid){
           var f=flights.find(function(x){return x.id===fid;});
-          if(f) Object.assign(f, val.flightEdits[fid]);
-        });
-      }
-      // ── Accom edits ──
-      if(val.accomEdits && typeof val.accomEdits==='object'){
-        Object.keys(val.accomEdits).forEach(function(aid){
+          if(f){var e=val.flightEdits[fid];if(e.num)f.num=e.num;if(e.dep)f.dep=e.dep;if(e.arr)f.arr=e.arr;if(e.terminal)f.terminal=e.terminal;if(e.gate)f.gate=e.gate;if(e.cabin)f.cabin=e.cabin;}
+        });}
+        if(val.accomEdits){ Object.keys(val.accomEdits).forEach(function(aid){
           var a=accoms.find(function(x){return x.id===aid;});
-          if(a) Object.assign(a, val.accomEdits[aid]);
-        });
-      }
-      // ── Itinerary user edits (activity text edits & additions only) ──
-      if(val.itinEdits && typeof val.itinEdits==='object'){
-        Object.keys(val.itinEdits).forEach(function(dayIdx){
-          var di=parseInt(dayIdx);
-          if(itinerary[di] && val.itinEdits[di].activities){
-            itinerary[di].activities = val.itinEdits[di].activities;
-          }
-        });
-      }
-      setSyncStatus('online','🟢 Live');
-    } else {
-      setSyncStatus('online','🟢 Ready');
-    }
-    // Selective refresh — only update what Firebase actually provides
-    renderExpenses(); buildCatGrid(); refreshBudget();
-    renderEmerg();
-    // Re-render guide notes (user may have updated from another device)
-    renderGuide(document.querySelector('.guide-search') ? document.querySelector('.guide-search').value : '');
-    // On first Firebase response, also refresh flights/accoms (edits may have been saved)
-    if(isFirst){
-      renderFlights(); renderAccoms();
-      loadWeather(); loadFX();
-      isFirst = false;
-    }
-  }, function(err){
-    setSyncStatus('offline','⚠️ Offline');
-    console.error('Firebase error:', err);
-  });
+          if(a){var e=val.accomEdits[aid];if(e.name)a.name=e.name;if(e.addr)a.addr=e.addr;if(e.nearTube)a.nearTube=e.nearTube;if(e.checkin)a.checkin=e.checkin;if(e.wifi)a.wifi=e.wifi;}
+        });}
+        if(val.itinEdits){ Object.keys(val.itinEdits).forEach(function(di){
+          var idx=parseInt(di);
+          if(itinerary[idx]&&val.itinEdits[di]&&Array.isArray(val.itinEdits[di].activities))
+            itinerary[idx].activities=val.itinEdits[di].activities;
+        });}
+        // Only re-render sections affected by cloud data
+        renderFlights(); renderAccoms(); renderEmerg();
+        renderExpenses(); buildCatGrid(); refreshBudget();
+        renderGuide(document.querySelector('.guide-search')?document.querySelector('.guide-search').value:'');
+        setSyncStatus('online','🟢 Live');
+      } catch(e){ console.error('listener err',e); setSyncStatus('offline','⚠️ Error'); }
+    }, function(err){ setSyncStatus('offline','⚠️ Offline'); console.error(err); });
+  } catch(e){ setSyncStatus('offline','Firebase error'); console.error(e); }
 }
+
 
 var flights = [
   {id:'f1',label:'Outbound — Leg 1',num:'MU726',route:'Hong Kong (HKG) → Shanghai Pudong (PVG)',dep:'13 May · 07:30',arr:'13 May · 10:15',terminal:'TBC',gate:'TBC',cabin:'Economy B',bg:'#1a2744'},
@@ -736,7 +703,6 @@ function setSyncStatus(state, msg) {
   if(lbl) lbl.textContent = msg||'Live';
 }
 
-// firebaseSave is now defined at top of script via Firebase compat SDK
 
 // ─── TRAVEL TIPS ─────────────────────────────────────────────────────────────
 var tipsData = [
@@ -1540,8 +1506,8 @@ _fns.forEach(function(name){
 var _origAddExp2 = addExp;
 addExp = function(){ _origAddExp2(); firebaseSave(); };
 
-// ─── START FIREBASE LISTENER (after all fns defined) ─────────────────────────
-initFirebaseListener();
+// ─── START FIREBASE (deferred — UI already rendered above) ─────────────────────
+setTimeout(initFirebase, 50);
 </script>
 </body>
 </html>
