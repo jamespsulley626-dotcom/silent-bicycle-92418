@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>London & Paris 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --navy:#1a2744;--navy2:#253562;--gold:#c9973a;--gold-light:#f0d9a8;--gold-pale:#fdf5e6;
+  --cream:#fdf8f0;--surface:#ffffff;--muted:#6b7280;--border:rgba(26,39,68,0.13);
+  --font-display:'Playfair Display',Georgia,serif;--font-body:'Source Sans 3',system-ui,sans-serif;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;background:var(--cream);font-family:var(--font-body);color:var(--navy);font-size:16px;}
+body{display:flex;flex-direction:column;min-height:100vh;}
+
+/* HEADER */
+.header{background:var(--navy);padding:16px 20px 0;flex-shrink:0;}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.header h1{font-family:var(--font-display);color:#fff;font-size:22px;font-weight:700;line-height:1.2;}
+.header p{color:var(--gold-light);font-size:13px;margin-top:3px;opacity:.85;}
+.header-badge{background:var(--gold);color:#fff;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+
+/* TOP NAV */
+.top-nav{display:flex;border-top:1px solid rgba(255,255,255,.12);margin-top:14px;overflow-x:auto;scrollbar-width:none;}
+.top-nav::-webkit-scrollbar{display:none;}
+.top-nav-btn{flex:1;min-width:70px;padding:13px 6px;text-align:center;font-size:13px;font-weight:500;color:rgba(255,255,255,.5);cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;transition:all .2s;font-family:var(--font-body);white-space:nowrap;}
+.top-nav-btn:hover{color:rgba(255,255,255,.85);}
+.top-nav-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+/* SCROLL AREA */
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(24px + var(--safe-bottom));}
+
+/* TAB CONTENT */
+.tab{display:none;padding:20px 16px;animation:fadeIn .22s ease;}
+.tab.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* TYPOGRAPHY */
+.sec-title{font-family:var(--font-display);font-size:20px;font-weight:600;margin-bottom:14px;margin-top:20px;}
+.sec-title:first-child{margin-top:0;}
+.label-sm{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:14px;}
+.card-gold{border-left:4px solid var(--gold);}
+
+/* FLIGHT CARDS */
+.flight-card{background:var(--navy);color:#fff;border-radius:14px;padding:18px;margin-bottom:12px;position:relative;overflow:hidden;}
+.flight-card::after{content:'✈';position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:44px;opacity:.07;}
+.flight-num{font-family:var(--font-display);font-size:22px;font-weight:600;}
+.flight-route{font-size:13px;color:var(--gold-light);margin-top:2px;opacity:.85;}
+.flight-details{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.fl-detail .fl-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;opacity:.5;}
+.fl-detail .fl-val{font-size:14px;font-weight:500;margin-top:2px;}
+.edit-btn{font-size:11px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;margin-top:10px;font-family:var(--font-body);}
+.edit-btn:hover{background:rgba(255,255,255,.25);}
+
+/* EDIT MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;padding:24px 20px calc(24px + var(--safe-bottom));animation:slideUp .25s ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal h3{font-family:var(--font-display);font-size:19px;margin-bottom:18px;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;font-weight:500;}
+.modal-field input,.modal-field textarea,.modal-field select{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:15px;color:var(--navy);background:var(--surface);outline:none;}
+.modal-field input:focus,.modal-field textarea:focus{border-color:var(--gold);}
+.modal-field textarea{resize:vertical;min-height:80px;}
+.modal-actions{display:flex;gap:10px;margin-top:18px;}
+.btn-save{flex:2;padding:13px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font-body);}
+.btn-cancel{flex:1;padding:13px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:10px;font-size:15px;cursor:pointer;font-family:var(--font-body);}
+.btn-danger{flex:1;padding:13px;background:#fee2e2;color:#b91c1c;border:none;border-radius:10px;font-size:15px;cursor:pointer;font-family:var(--font-body);}
+
+/* ACCOM */
+.accom-row{display:flex;gap:14px;align-items:flex-start;}
+.accom-pin{width:44px;height:44px;border-radius:50%;background:var(--gold-pale);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.accom-info h3{font-weight:600;font-size:16px;}
+.accom-info p{font-size:14px;color:var(--muted);margin-top:3px;line-height:1.5;}
+.info-row{display:flex;gap:8px;font-size:14px;padding:5px 0;align-items:center;}
+.info-row .il{color:var(--muted);min-width:80px;font-size:13px;}
+.info-row .iv{font-weight:500;}
+.badge{display:inline-block;font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500;margin-top:8px;}
+.badge-green{background:#dcfce7;color:#15803d;}
+.badge-blue{background:#dbeafe;color:#1d4ed8;}
+.badge-shanghai{background:#fef9c3;color:#92400e;}
+
+/* WEATHER */
+.weather-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;}
+.w-day{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 4px;text-align:center;}
+.w-date{font-size:10px;color:var(--muted);font-weight:500;line-height:1.3;}
+.w-icon{font-size:20px;margin:5px 0 3px;}
+.w-hi{font-size:13px;font-weight:600;}
+.w-lo{font-size:11px;color:var(--muted);}
+
+/* EMERGENCY */
+.emerg-card{background:#fff5f5;border:1px solid #fecaca;border-radius:14px;padding:16px 18px;margin-top:4px;}
+.emerg-card h3{color:#991b1b;font-size:15px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.emerg-num{font-size:16px;font-weight:700;color:#dc2626;}
+.emerg-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #fecaca;}
+.emerg-row:last-child{border-bottom:none;}
+.emerg-label{font-size:13px;color:#7f1d1d;}
+
+/* ITINERARY */
+.day-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;margin-bottom:18px;}
+.day-scroll::-webkit-scrollbar{display:none;}
+.day-chip{flex-shrink:0;padding:8px 13px;border-radius:9px;border:1px solid var(--border);background:var(--surface);font-size:13px;cursor:pointer;font-family:var(--font-body);color:var(--navy);font-weight:500;transition:all .15s;white-space:nowrap;}
+.day-chip.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.day-chip.rest{color:#9ca3af;border-color:#e5e7eb;}
+.day-chip.paris{border-color:#bfdbfe;color:#1d4ed8;}
+.day-chip.paris.active{background:#1d4ed8;border-color:#1d4ed8;color:#fff;}
+.day-chip.travel{border-color:#bbf7d0;color:#15803d;}
+.day-chip.travel.active{background:#15803d;border-color:#15803d;color:#fff;}
+
+.day-header-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px;}
+.day-big-title{font-family:var(--font-display);font-size:22px;}
+.day-sublabel{font-size:14px;color:var(--muted);margin-top:2px;}
+.pace-pill{font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;flex-shrink:0;}
+.pace-light{background:#dcfce7;color:#15803d;}
+.pace-med{background:#fef3c7;color:#b45309;}
+.pace-full{background:#dbeafe;color:#1d4ed8;}
+.pace-travel{background:#d1fae5;color:#065f46;}
+
+.timeline{position:relative;padding-left:28px;}
+.timeline::before{content:'';position:absolute;left:9px;top:4px;bottom:4px;width:2px;background:linear-gradient(to bottom,var(--gold) 0%,rgba(201,151,58,.2) 100%);}
+
+.activity{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 15px;margin-bottom:11px;cursor:grab;transition:box-shadow .15s,border-color .15s;}
+.activity::before{content:'';position:absolute;left:-22px;top:50%;transform:translateY(-50%);width:10px;height:10px;border-radius:50%;background:var(--gold);border:2px solid var(--cream);}
+.activity:hover{border-color:var(--gold);box-shadow:0 2px 10px rgba(201,151,58,.15);}
+.activity.dragging{opacity:.45;cursor:grabbing;}
+.activity.dragover{border-color:var(--gold);background:var(--gold-pale);}
+.act-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.act-name{font-weight:600;font-size:16px;line-height:1.3;}
+.act-cost{font-size:13px;color:var(--gold);font-weight:600;background:var(--gold-pale);padding:3px 9px;border-radius:7px;white-space:nowrap;flex-shrink:0;}
+.act-meta{display:flex;flex-direction:column;gap:3px;margin-top:7px;}
+.act-meta span{font-size:13px;color:var(--muted);}
+.act-note{margin-top:9px;font-size:13px;color:#374151;background:#f9fafb;padding:9px 11px;border-radius:8px;border-left:3px solid var(--gold);line-height:1.5;}
+.act-actions{display:flex;gap:6px;margin-top:10px;}
+.act-edit-btn{font-size:12px;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;cursor:pointer;font-family:var(--font-body);color:var(--muted);}
+.act-edit-btn:hover{background:var(--cream);color:var(--navy);}
+.act-del-btn{font-size:12px;padding:5px 12px;border-radius:7px;border:1px solid #fecaca;background:transparent;cursor:pointer;font-family:var(--font-body);color:#dc2626;}
+
+.add-activity-btn{width:100%;padding:13px;border:1.5px dashed var(--border);border-radius:12px;background:transparent;font-family:var(--font-body);font-size:14px;color:var(--muted);cursor:pointer;margin-top:4px;transition:all .15s;}
+.add-activity-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-pale);}
+#add-attraction-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-pale);}
+
+/* BUDGET */
+.conv-card{background:var(--navy);color:#fff;border-radius:14px;padding:20px;margin-bottom:16px;}
+.conv-title{font-family:var(--font-display);font-size:18px;margin-bottom:3px;}
+.conv-rate{font-size:13px;color:var(--gold-light);opacity:.8;margin-bottom:16px;}
+.conv-row{display:grid;grid-template-columns:1fr 36px 1fr;gap:10px;align-items:flex-end;}
+.conv-group label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.6;display:block;margin-bottom:5px;}
+.conv-group input{width:100%;padding:11px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:18px;font-weight:600;font-family:var(--font-body);outline:none;}
+.conv-group input::placeholder{color:rgba(255,255,255,.3);}
+.conv-arrow{text-align:center;font-size:18px;color:var(--gold);padding-bottom:11px;}
+
+.prog-section{margin-bottom:20px;}
+.prog-labels{display:flex;justify-content:space-between;margin-bottom:8px;align-items:baseline;}
+.prog-spent{font-size:18px;font-weight:700;}
+.prog-budget-label{font-size:13px;color:var(--muted);}
+.prog-bar{height:10px;background:#e5e7eb;border-radius:8px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--gold),#e8a83c);transition:width .4s;}
+.prog-remain{font-size:12px;color:var(--muted);margin-top:6px;}
+
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px;}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:12px 10px;}
+.cat-name{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.cat-amt{font-size:16px;font-weight:700;margin-top:3px;}
+.cat-bar-bg{height:3px;background:#e5e7eb;border-radius:2px;margin-top:8px;}
+.cat-bar-fill{height:100%;border-radius:2px;transition:width .3s;}
+
+.exp-form{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.exp-form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.exp-form input,.exp-form select{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:14px;color:var(--navy);background:var(--surface);outline:none;}
+.exp-form input:focus,.exp-form select:focus{border-color:var(--gold);}
+.btn-add-exp{width:100%;padding:13px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font-body);}
+.exp-row{display:flex;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.exp-row:last-child{border-bottom:none;}
+.exp-name{flex:2;font-weight:500;}
+.exp-cat{flex:1;font-size:12px;color:var(--muted);}
+.exp-amt{font-weight:600;white-space:nowrap;}
+.exp-gbp-note{font-size:11px;color:var(--muted);font-weight:400;}
+.exp-del{background:none;border:none;color:#d1d5db;cursor:pointer;font-size:18px;padding:0 3px;}
+.exp-del:hover{color:#ef4444;}
+.total-bar{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-top:2px solid var(--navy);margin-top:4px;}
+.total-label{font-weight:600;font-size:15px;}
+.total-amt{font-family:var(--font-display);font-size:22px;font-weight:700;}
+
+/* GUIDE TAB */
+.guide-search{width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:12px;font-family:var(--font-body);font-size:15px;background:var(--surface);outline:none;margin-bottom:16px;}
+.guide-search:focus{border-color:var(--gold);}
+.guide-filter{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none;}
+.guide-filter::-webkit-scrollbar{display:none;}
+.gf-btn{flex-shrink:0;padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:13px;cursor:pointer;font-family:var(--font-body);font-weight:500;color:var(--muted);white-space:nowrap;}
+.gf-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+.guide-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:14px;overflow:hidden;}
+.guide-img{width:100%;height:140px;object-fit:cover;display:block;background:var(--cream);}
+.guide-img-placeholder{width:100%;height:100px;background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);display:flex;align-items:center;justify-content:center;font-size:36px;}
+.guide-body{padding:15px 16px;}
+.guide-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;}
+.guide-name{font-family:var(--font-display);font-size:18px;font-weight:600;}
+.guide-cat-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;white-space:nowrap;flex-shrink:0;}
+.guide-summary{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:10px;}
+.guide-fact-row{display:flex;gap:8px;font-size:13px;padding:4px 0;flex-wrap:wrap;}
+.guide-fact-row .fact-label{color:var(--muted);min-width:70px;}
+.guide-fact-row .fact-val{font-weight:500;}
+.guide-notes-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-top:12px;margin-bottom:5px;}
+.guide-notes-area{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;font-family:var(--font-body);font-size:14px;color:var(--navy);background:#f9fafb;resize:vertical;min-height:70px;outline:none;}
+.guide-notes-area:focus{border-color:var(--gold);}
+.guide-upload{margin-top:10px;}
+.guide-upload label{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px dashed var(--border);border-radius:9px;cursor:pointer;font-size:13px;color:var(--muted);}
+.guide-upload label:hover{border-color:var(--gold);color:var(--gold);}
+.guide-upload input{display:none;}
+.guide-uploaded-img{width:100%;max-height:180px;object-fit:cover;border-radius:9px;margin-top:8px;display:block;}
+.guide-expand-btn{width:100%;padding:10px;background:none;border:none;border-top:1px solid var(--border);font-family:var(--font-body);font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;}
+.guide-expand-btn:hover{background:var(--cream);}
+.guide-expanded{display:none;padding:0 16px 14px;}
+.guide-expanded.open{display:block;}
+
+/* BUDGET INPUT EDIT */
+.budget-edit-input{width:70px;border:none;border-bottom:1px solid var(--border);font-size:14px;font-family:var(--font-body);color:var(--muted);background:transparent;outline:none;text-align:right;}
+
+@media(min-width:600px){
+  .exp-form{flex-direction:row;flex-wrap:wrap;}
+  .exp-form input[name=desc]{flex:2;min-width:160px;}
+  .exp-form input[name=amt]{flex:1;min-width:90px;}
+  .exp-form select{flex:1;min-width:110px;}
+  .btn-add-exp{width:auto;flex:0 0 auto;padding:11px 20px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1 id="app-title">London &amp; Paris 2026</h1>
+      <p id="app-subtitle">13 May — 15 Jun · 33 days</p>
+    </div>
+    <div class="header-badge" id="app-badge">✈ HKG → LHR → HKG</div>
+  </div>
+  <nav class="top-nav">
+    <button class="top-nav-btn active" onclick="switchTab('general')">General</button>
+    <button class="top-nav-btn" onclick="switchTab('itinerary')">Itinerary</button>
+    <button class="top-nav-btn" onclick="switchTab('budget')">Budget</button>
+    <button class="top-nav-btn" onclick="switchTab('guide')">Guide</button>
+  </nav>
+</div>
+
+<div class="scroll-area">
+
+<!-- ====== GENERAL ====== -->
+<div id="tab-general" class="tab active">
+
+  <p class="sec-title">Flights</p>
+  <div id="flight-cards"></div>
+
+  <p class="sec-title">Accommodation</p>
+  <div id="accom-cards"></div>
+
+  <p class="sec-title">London Weather</p>
+  <div id="weather-box"><div style="text-align:center;padding:20px;color:var(--muted);font-size:14px">Loading…</div></div>
+
+  <p class="sec-title">Emergency Contacts</p>
+  <div class="emerg-card">
+    <h3>🚨 Emergency Numbers</h3>
+    <div class="emerg-row"><span class="emerg-label">UK Emergency (Police/Fire/Ambulance)</span><span class="emerg-num">999</span></div>
+    <div class="emerg-row"><span class="emerg-label">EU / International Emergency</span><span class="emerg-num">112</span></div>
+    <div class="emerg-row"><span class="emerg-label">France Emergency (Paris)</span><span class="emerg-num">15 / 17 / 18</span></div>
+    <div class="emerg-row"><span class="emerg-label">NHS Non-urgent (UK)</span><span class="emerg-num">111</span></div>
+    <div class="emerg-row"><span class="emerg-label">SAMU (France Medical)</span><span class="emerg-num">15</span></div>
+    <div class="emerg-row"><span class="emerg-label">HK Consulate London</span><span class="emerg-num">+44 20 7499 9821</span></div>
+    <div style="height:12px"></div>
+    <div class="label-sm">Your contacts</div>
+    <div id="custom-emerg-list"></div>
+    <button onclick="openModal('add-emerg')" style="margin-top:10px;padding:9px 16px;border:1px dashed #fca5a5;border-radius:9px;background:transparent;color:#dc2626;font-size:13px;cursor:pointer;font-family:var(--font-body);">+ Add contact</button>
+  </div>
+</div>
+
+<!-- ====== ITINERARY ====== -->
+<div id="tab-itinerary" class="tab">
+  <div class="day-scroll" id="day-scroll"></div>
+  <div id="day-view"></div>
+</div>
+
+<!-- ====== BUDGET ====== -->
+<div id="tab-budget" class="tab">
+  <p class="sec-title" style="margin-top:0">Currency Converter</p>
+  <div class="conv-card">
+    <div class="conv-title">GBP ⇄ HKD</div>
+    <div class="conv-rate" id="fx-rate-label">Loading live rate…</div>
+    <div class="conv-row">
+      <div class="conv-group"><label>British Pounds £</label><input type="number" id="gbp-in" placeholder="0.00" oninput="cGBP(this.value)"></div>
+      <div class="conv-arrow">⇄</div>
+      <div class="conv-group"><label>HK Dollars HK$</label><input type="number" id="hkd-in" placeholder="0.00" oninput="cHKD(this.value)"></div>
+    </div>
+  </div>
+
+  <p class="sec-title">Budget Overview</p>
+  <div class="card prog-section">
+    <div class="prog-labels">
+      <span class="prog-spent">£<span id="spent-disp">0.00</span> spent</span>
+      <span class="prog-budget-label">Budget: £<input class="budget-edit-input" type="number" id="budget-max" value="3000" onchange="refreshBudget()"></span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-remain">£<span id="remain-disp">3000.00</span> remaining</div>
+  </div>
+
+  <div class="cat-grid" id="cat-grid"></div>
+
+  <p class="sec-title">Add Expense</p>
+  <div class="exp-form">
+    <input name="desc" type="text" id="exp-desc" placeholder="Description (e.g. Borough Market lunch)">
+    <div class="exp-form-row">
+      <input name="amt" type="number" id="exp-amt" placeholder="Amount" step="0.01">
+      <select id="exp-curr"><option value="gbp">£ GBP</option><option value="hkd">HK$ HKD</option></select>
+    </div>
+    <div class="exp-form-row">
+      <select id="exp-cat">
+        <option>Transport</option><option>Food</option><option>Attractions</option>
+        <option>Shopping</option><option>Accommodation</option><option>Other</option>
+      </select>
+      <select id="exp-payer">
+        <option value="Dad">👨 Dad</option>
+        <option value="Mum">👩 Mum</option>
+        <option value="Me">🧑 Me</option>
+        <option value="Shared">🤝 Shared</option>
+      </select>
+    </div>
+    <button class="btn-add-exp" onclick="addExp()">+ Add</button>
+  </div>
+  <div id="payer-summary" style="display:none;margin-bottom:14px"></div>
+  <div class="card">
+    <div id="exp-list"><div style="text-align:center;padding:18px;color:var(--muted);font-size:14px">No expenses yet.</div></div>
+    <div class="total-bar"><span class="total-label">Total Spent</span><span class="total-amt">£<span id="grand-total">0.00</span></span></div>
+  </div>
+</div>
+
+<!-- ====== GUIDE ====== -->
+<div id="tab-guide" class="tab">
+  <input class="guide-search" type="text" placeholder="Search attractions…" oninput="filterGuide(this.value)">
+  <div class="guide-filter" id="guide-filter"></div>
+  <div id="guide-cards"></div>
+  <button id="add-attraction-btn" onclick="openModal('add-guide')" style="width:100%;padding:14px;border:1.5px dashed var(--border);border-radius:12px;background:transparent;font-family:var(--font-body);font-size:15px;color:var(--muted);cursor:pointer;margin-top:4px;transition:all .15s;">+ Add New Attraction</button>
+</div>
+
+</div><!-- /scroll-area -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" style="display:none" onclick="closeModal(event)">
+  <div class="modal" id="modal-box" onclick="event.stopPropagation()">
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+var flights = [
+  {id:'f1',label:'Outbound — Leg 1',num:'MU726',route:'Hong Kong (HKG) → Shanghai Pudong (PVG)',dep:'13 May · 07:30',arr:'13 May · 10:15',terminal:'TBC',gate:'TBC',cabin:'Economy B',bg:'#1a2744'},
+  {id:'f2',label:'Outbound — Leg 2',num:'MU551',route:'Shanghai Pudong (PVG) → London Heathrow (LHR)',dep:'13 May · 12:55',arr:'13 May · 18:40',terminal:'TBC',gate:'TBC',cabin:'Economy Z',bg:'#253562'},
+  {id:'f3',label:'Return — Leg 1',num:'MU214',route:'London Gatwick (LGW) → Shanghai Pudong (PVG)',dep:'13 Jun · 18:00',arr:'14 Jun · 11:55',terminal:'TBC',gate:'TBC',cabin:'Economy Z',bg:'#1e3a5f'},
+  {id:'f4',label:'Return — Leg 2',num:'MU701',route:'Shanghai Pudong (PVG) → Hong Kong (HKG)',dep:'15 Jun · 09:40',arr:'15 Jun · 12:45',terminal:'TBC',gate:'TBC',cabin:'Economy B',bg:'#2d3a5c'}
+];
+var accoms = [
+  {id:'a1',icon:'🏠',city:'London',dates:'13 May – 13 Jun',name:'Your London Home',addr:'Add address here',nearTube:'TBC',checkin:'13 May (late arrival)',wifi:'Add Wi-Fi password',nights:'31 nights',badgeCls:'badge-green'},
+  {id:'a2',icon:'🗼',city:'Paris',dates:'4 Jun – 9 Jun',name:'Paris Accommodation',addr:'Add Paris address here',nearTube:'Nearest Metro TBC',checkin:'4 Jun',wifi:'TBC',nights:'5 nights · Paris',badgeCls:'badge-blue'},
+  {id:'a3',icon:'🇨🇳',city:'Shanghai',dates:'13 Jun – 14 Jun',name:'Shanghai Transit Hotel',addr:'Add hotel address here (near PVG or city)',nearTube:'Airport shuttle or Metro Line 2',checkin:'13 Jun (late, after MU214 arrives)',wifi:'TBC',nights:'1 night · Transit',badgeCls:'badge-shanghai'}
+];
+var customEmerg = [];
+var fxRate = 9.85;
+var expenses = [];
+var catTotals = {Transport:0,Food:0,Attractions:0,Shopping:0,Accommodation:0,Other:0};
+var catColors = {Transport:'#3b82f6',Food:'#f59e0b',Attractions:'#8b5cf6',Shopping:'#ec4899',Accommodation:'#10b981',Other:'#6b7280'};
+
+var itinerary = [
+  {date:'13 May',day:'Wed',label:'Arrival',type:'travel',activities:[
+    {name:'Arrive Heathrow T3',time:'TBC',addr:'London Heathrow, TW6 1QG',cost:'Flight',note:'Take Piccadilly Line or Heathrow Express to central London. Journey ~50min/15min.'}
+  ]},
+  {date:'14 May',day:'Thu',label:'Rest + Wetherspoon',type:'rest',activities:[
+    {name:'Rest & settle in',time:'Morning',addr:'Home',cost:'Free',note:'Easy day after long flight.'},
+    {name:"JD Wetherspoon lunch",time:'12:30pm',addr:'Nearest branch – check app',cost:'~£15/person',note:'Classic British pub food at great value. Search "Wetherspoon near me".'}
+  ]},
+  {date:'15 May',day:'Fri',label:'Rest + Costco',type:'rest',activities:[
+    {name:'Morning rest',time:'Morning',addr:'Home',cost:'Free',note:''},
+    {name:'Costco stock-up',time:'After 5pm',addr:'Costco Haringey or nearest',cost:'As needed',note:'Good for snacks, household items. Membership needed.'}
+  ]},
+  {date:'16 May',day:'Sat',label:'London Bridge + Borough Market',type:'sightseeing',activities:[
+    {name:'Borough Market',time:'10:00am',addr:'8 Southwark St, SE1 1TL',cost:'Free entry',note:'One of London\'s greatest food markets. Thu–Sat only. Arrive before noon.'},
+    {name:'London Bridge walk',time:'12:00pm',addr:'London Bridge, SE1',cost:'Free',note:'Walk across for Thames views and The Shard.'},
+    {name:'Market lunch',time:'12:30pm',addr:'Borough Market stalls',cost:'~£15–20/person',note:''},
+    {name:'South Bank riverside walk',time:'2:00pm',addr:'South Bank, SE1',cost:'Free',note:'Gentle walk along the Thames. Tate Modern nearby.'}
+  ]},
+  {date:'17 May',day:'Sun',label:'Kew Gardens',type:'sightseeing',activities:[
+    {name:'Royal Botanic Gardens Kew',time:'10:30am',addr:'Kew, Richmond, TW9 3AB',cost:'£22/adult',note:'Allow 3–4 hrs. Comfortable shoes. District Line to Kew Gardens station.'},
+    {name:'Lunch at Kew',time:'1:00pm',addr:'The Botanical Kitchen, Kew',cost:'~£20/person',note:''},
+    {name:'Palm House & glasshouses',time:'2:30pm',addr:'Palm House, Kew Gardens',cost:'Included',note:'Don\'t miss the Palm House — spectacular Victorian iron & glass.'}
+  ]},
+  {date:'18 May',day:'Mon',label:'British Museum',type:'sightseeing',activities:[
+    {name:'British Museum',time:'10:00am',addr:'Great Russell St, WC1B 3DG',cost:'Free',note:'Rosetta Stone, Egyptian mummies. Very large — focus on 2–3 galleries only.'},
+    {name:'Lunch nearby',time:'1:00pm',addr:'Museum Tavern, Great Russell St',cost:'~£15/person',note:''},
+    {name:'Rest afternoon',time:'3:00pm',addr:'Home',cost:'Free',note:'Museums are tiring — good to rest after.'}
+  ]},
+  {date:'19 May',day:'Tue',label:'Rest Day',type:'rest',activities:[
+    {name:'Rest at home',time:'All day',addr:'Home',cost:'Free',note:'Relax, gentle walk if feeling up to it.'}
+  ]},
+  {date:'20 May',day:'Wed',label:'Billingsgate Market + Cook',type:'food',activities:[
+    {name:'Billingsgate Fish Market',time:'6:00am',addr:'Trafalgar Way, E14 5ST',cost:'Free entry',note:'⚠️ Very early — 5am–8:30am. Taxi recommended. UK\'s largest fish market. Bring cash!'},
+    {name:'Morning rest',time:'9:00am',addr:'Home',cost:'Free',note:'Rest after the early start.'},
+    {name:'Seafood dinner at home',time:'6:00pm',addr:'Home',cost:'Market price',note:'Cook the fresh seafood from the morning. Enjoy!'}
+  ]},
+  {date:'21 May',day:'Thu',label:'Natural History Museum + Harrods',type:'sightseeing',activities:[
+    {name:'Natural History Museum',time:'10:00am',addr:'Cromwell Rd, SW7 5BD',cost:'Free',note:'Blue Whale skeleton, dinosaurs. South Kensington Tube.'},
+    {name:'Lunch at South Ken',time:'1:00pm',addr:'Brompton Road area',cost:'~£15/person',note:'Many cafés nearby.'},
+    {name:'Harrods browse',time:'3:00pm',addr:'87–135 Brompton Rd, SW1X 7XL',cost:'Window shopping!',note:'10-min walk from museum. Famous food hall worth seeing. No need to buy!'}
+  ]},
+  {date:'22 May',day:'Fri',label:'Arsenal Stadium Tour',type:'sightseeing',activities:[
+    {name:'Emirates Stadium Tour',time:'11:00am',addr:'Emirates Stadium, N7 7AJ',cost:'£30/adult',note:'⚠️ Must pre-book at arsenal.com/tours. Tube: Arsenal (Piccadilly Line).'},
+    {name:'Lunch Holloway Road',time:'1:30pm',addr:'Holloway Road, N7',cost:'~£15/person',note:''},
+    {name:'Rest afternoon',time:'3:00pm',addr:'Home',cost:'Free',note:''}
+  ]},
+  {date:'23 May',day:'Sat',label:'Big Ben / Buckingham / Chinatown',type:'sightseeing',activities:[
+    {name:'Buckingham Palace',time:'10:00am',addr:'Buckingham Palace, SW1A 1AA',cost:'Free (outside)',note:'Check Changing of Guard schedule at royal.uk.'},
+    {name:"St James's Park",time:'11:00am',addr:"St James's Park, SW1A 2BJ",cost:'Free',note:'Beautiful park between the Palace and Westminster.'},
+    {name:'Big Ben & Westminster',time:'12:00pm',addr:'Westminster Bridge, SW1A 0AA',cost:'Free',note:'Great photo spot. Westminster Abbey nearby (£30).'},
+    {name:'Chinatown dim sum lunch',time:'1:30pm',addr:'Gerrard St, Soho, W1D 5PT',cost:'~£20/person',note:'Familiar Cantonese food — very comforting!'},
+    {name:'Soho stroll',time:'3:00pm',addr:'Soho, W1',cost:'Free',note:'Lively area — rest whenever tired.'}
+  ]},
+  {date:'24 May',day:'Sun',label:'Oxford Day Trip',type:'sightseeing',activities:[
+    {name:'Train to Oxford',time:'9:30am',addr:'Paddington Station, W2 1HB',cost:'~£30–40 return',note:'Book on trainline.com. Journey ~1 hour.'},
+    {name:'Oxford city walk',time:'11:00am',addr:'Radcliffe Camera, OX1 4BG',cost:'Free',note:'Walk the colleges — Christ Church, Bodleian Library.'},
+    {name:'Lunch in Oxford',time:'1:00pm',addr:'The Covered Market, Oxford',cost:'~£15/person',note:''},
+    {name:'Return to London',time:'4:00pm',addr:'Oxford Station',cost:'Included',note:'Don\'t overtire — head back by 4–5pm.'}
+  ]},
+  {date:'25 May',day:'Mon',label:'Rest Day',type:'rest',activities:[
+    {name:'Rest at home',time:'All day',addr:'Home',cost:'Free',note:'Recovery after busy week.'}
+  ]},
+  {date:'26 May',day:'Tue',label:'Suggested: Greenwich',type:'suggestion',activities:[
+    {name:'Cutty Sark',time:'10:30am',addr:'King William Walk, SE10 9HT',cost:'£18/adult',note:'Historic tea clipper. DLR to Cutty Sark.'},
+    {name:'Greenwich Market',time:'12:30pm',addr:'College Approach, SE10 9HY',cost:'Free entry',note:'Arts, crafts & street food. Open most days.'},
+    {name:'Royal Observatory',time:'2:00pm',addr:'Blackheath Ave, SE10 8XJ',cost:'£18/adult',note:'Stand on the Prime Meridian! Stunning views of London.'}
+  ]},
+  {date:'27 May',day:'Wed',label:'Suggested: V&A Museum',type:'suggestion',activities:[
+    {name:'Victoria & Albert Museum',time:'10:30am',addr:'Cromwell Rd, SW7 2RL',cost:'Free',note:'World\'s largest decorative arts museum. South Kensington Tube.'},
+    {name:'Lunch at V&A café',time:'1:00pm',addr:'V&A Restaurant, SW7',cost:'~£15/person',note:'The café interior is itself worth seeing.'}
+  ]},
+  {date:'28 May',day:'Thu',label:'Suggested: Tower of London',type:'suggestion',activities:[
+    {name:'Tower of London',time:'10:00am',addr:'Tower Hill, EC3N 4AB',cost:'£34/adult',note:'Crown Jewels, Beefeaters. Book online. Tube: Tower Hill.'},
+    {name:'Tower Bridge walk',time:'1:00pm',addr:'Tower Bridge Rd, SE1 2UP',cost:'Free (outside)',note:''}
+  ]},
+  {date:'29 May',day:'Fri',label:'Suggested: Hampton Court',type:'suggestion',activities:[
+    {name:'Hampton Court Palace',time:'10:30am',addr:'East Molesey, KT8 9AU',cost:'£30/adult',note:'Henry VIII\'s palace. Beautiful gardens. Train from Waterloo ~35min.'},
+    {name:'Palace gardens',time:'1:00pm',addr:'Hampton Court Gardens',cost:'Included',note:'Bring a picnic lunch for the gardens.'}
+  ]},
+  {date:'30 May',day:'Sat',label:'Suggested: Portobello Road',type:'suggestion',activities:[
+    {name:'Portobello Road Market',time:'10:00am',addr:'Portobello Rd, W11 2QB',cost:'Free',note:'Antiques & street food. Best Saturdays. Tube: Notting Hill Gate.'},
+    {name:'Notting Hill walk',time:'12:00pm',addr:'Notting Hill, W11',cost:'Free',note:'Colourful houses, charming streets.'}
+  ]},
+  {date:'31 May',day:'Sun',label:'Suggested: Richmond Park',type:'suggestion',activities:[
+    {name:'Richmond Park',time:'10:30am',addr:'Richmond, TW10 5HS',cost:'Free',note:'See wild deer! Gentle paths. Tube: Richmond (District Line).'},
+    {name:'Lunch in Richmond',time:'1:00pm',addr:'Richmond town centre',cost:'~£20/person',note:''}
+  ]},
+  {date:'1 Jun',day:'Mon',label:'Rest Day',type:'rest',activities:[
+    {name:'Rest at home',time:'All day',addr:'Home',cost:'Free',note:'Rest before Paris trip.'}
+  ]},
+  {date:'2 Jun',day:'Tue',label:'Rest Day',type:'rest',activities:[
+    {name:'Packing & prep',time:'All day',addr:'Home',cost:'Free',note:'Pack for Paris, confirm all bookings.'}
+  ]},
+  {date:'3 Jun',day:'Wed',label:'Pre-Paris',type:'rest',activities:[
+    {name:'Final prep',time:'Morning',addr:'Home',cost:'Free',note:'Check Paris itinerary, pack bags.'},
+    {name:'Farewell London afternoon tea',time:'3:00pm',addr:'Nearby tearoom',cost:'~£30/person',note:'A special treat before Paris!'}
+  ]},
+  {date:'4 Jun',day:'Thu',label:'Paris — Arrive',type:'paris',activities:[
+    {name:'Travel to Paris',time:'TBC',addr:'St Pancras / Heathrow',cost:'TBC',note:'Eurostar from St Pancras ~2.5hrs. Flight from Heathrow ~1.5hrs.'},
+    {name:'Check in & settle',time:'Afternoon',addr:'Paris Accommodation',cost:'Free',note:'Rest on arrival day.'},
+    {name:'Brasserie dinner',time:'7:00pm',addr:'Near hotel',cost:'~€30/person',note:'First Paris meal — find a classic brasserie!'}
+  ]},
+  {date:'5 Jun',day:'Fri',label:'Paris — Eiffel Tower',type:'paris',activities:[
+    {name:'Eiffel Tower',time:'9:30am',addr:'Champ de Mars, 75007 Paris',cost:'~€30/adult',note:'⚠️ Pre-book at toureiffel.paris. Early arrival avoids queues.'},
+    {name:'Trocadéro viewpoint',time:'12:00pm',addr:'Place du Trocadéro, 75016',cost:'Free',note:'Best photo spot for the Tower.'},
+    {name:'Rue Cler lunch',time:'1:00pm',addr:'Rue Cler, 75007 Paris',cost:'~€20/person',note:'Charming market street.'}
+  ]},
+  {date:'6 Jun',day:'Sat',label:'Paris — Louvre + Montmartre',type:'paris',activities:[
+    {name:'Louvre Museum',time:'9:00am',addr:'Rue de Rivoli, 75001 Paris',cost:'€22/adult',note:'⚠️ Pre-book timed entry. Mona Lisa, Venus de Milo. Pick 3–4 sections only.'},
+    {name:'Tuileries Garden café',time:'1:00pm',addr:'Jardin des Tuileries, 75001',cost:'~€15/person',note:''},
+    {name:'Montmartre & Sacré-Cœur',time:'4:00pm',addr:'Place du Tertre, 75018',cost:'Free',note:'Take the funicular up the hill if tired.'}
+  ]},
+  {date:'7 Jun',day:'Sun',label:'Paris — Versailles',type:'paris',activities:[
+    {name:'Palace of Versailles',time:'10:00am',addr:"Place d'Armes, 78000 Versailles",cost:'€20/adult',note:'⚠️ Pre-book. Train ~40min. Grand palace and gardens.'},
+    {name:'Versailles gardens',time:'1:00pm',addr:'Gardens of Versailles',cost:'Included',note:'Sit by the fountains, walk at your own pace.'}
+  ]},
+  {date:'8 Jun',day:'Mon',label:'Paris — Final Day',type:'paris',activities:[
+    {name:'Le Marais walk',time:'10:30am',addr:'Le Marais, 75004 Paris',cost:'Free',note:'Charming old district, Jewish quarter, lovely cafés.'},
+    {name:'Final Paris lunch',time:'12:30pm',addr:'Le Marais bistro',cost:'~€25/person',note:'Make it special — last Paris meal!'},
+    {name:'Souvenirs & packing',time:'3:00pm',addr:'Near hotel',cost:'As needed',note:''}
+  ]},
+  {date:'9 Jun',day:'Tue',label:'Return to London',type:'travel',activities:[
+    {name:'Return travel to London',time:'TBC',addr:'Paris Gare du Nord / CDG',cost:'TBC',note:'Eurostar or flight back. Return to London home.'}
+  ]},
+  {date:'10 Jun',day:'Wed',label:'Rest Day',type:'rest',activities:[
+    {name:'Rest after Paris',time:'All day',addr:'Home',cost:'Free',note:'Recovery day.'}
+  ]},
+  {date:'11 Jun',day:'Thu',label:'Free Day',type:'rest',activities:[
+    {name:'Flexible day',time:'All day',addr:'TBC',cost:'TBC',note:'Use for anything missed or revisit a favourite!'}
+  ]},
+  {date:'12 Jun',day:'Fri',label:'Last Day in London',type:'rest',activities:[
+    {name:'Packing & prep',time:'Morning',addr:'Home',cost:'Free',note:''},
+    {name:'Farewell dinner',time:'7:00pm',addr:'Your favourite restaurant',cost:'Treat!',note:'Last dinner in London — celebrate the trip!'}
+  ]},
+  {date:'13 Jun',day:'Sat',label:'Fly Home to HK',type:'travel',activities:[
+    {name:'Transfer to Heathrow',time:'TBC',addr:'Heathrow Airport, TW6 1QG',cost:'~£25–50',note:'Allow 3+ hours before departure. Heathrow Express or taxi.'},
+    {name:'Fly Hong Kong (HKG)',time:'TBC',addr:'LHR Terminal 3',cost:'Included',note:'Safe travels and see you soon! 🏠'}
+  ]}
+];
+
+var guideData = [
+  {id:'borough',name:'Borough Market',cat:'Market',city:'London',catColor:'#f59e0b',catBg:'#fef3c7',
+   website:'https://boroughmarket.org.uk',
+   summary:'One of London\'s oldest and most celebrated food markets, dating back to the 13th century. Located under the arches of London Bridge Station, it hosts over 100 stalls selling artisan produce, street food, cheeses, meats, and baked goods from around the world.',
+   summaryZH:'波羅市場是倫敦最古老、最著名的食品市場之一，歷史可追溯至13世紀。市場位於倫敦橋車站的拱廊之下，設有超過100個攤位，售賣來自世界各地的手工農產品、街頭小食、芝士、肉類及烘焙食品。',
+   facts:[{l:'Location',v:'Southwark, SE1'},{l:'Open',v:'Mon–Sat (full market Thu–Sat)'},{l:'Entry',v:'Free'},{l:'Best time',v:'Weekday mornings'}],
+   notes:'',img:null},
+  {id:'kew',name:'Kew Gardens',cat:'Nature',city:'London',catColor:'#10b981',catBg:'#dcfce7',
+   website:'https://www.kew.org',
+   summary:'The Royal Botanic Gardens at Kew is a UNESCO World Heritage Site spanning 132 hectares. Home to the world\'s largest collection of living plants, including the iconic Victorian Palm House glasshouse, the Treetop Walkway, and thousands of species from every continent.',
+   summaryZH:'邱園（皇家植物園）是聯合國教科文組織世界遺產，佔地132公頃。園內擁有全球最大的活植物收藏，包括標誌性的維多利亞時代棕櫚屋玻璃溫室、樹頂步道，以及來自世界各大洲的數千種植物。',
+   facts:[{l:'Location',v:'Richmond, TW9'},{l:'Open',v:'Daily 10am–dusk'},{l:'Entry',v:'£22/adult'},{l:'Tube',v:'District Line to Kew'}],
+   notes:'',img:null},
+  {id:'british-museum',name:'British Museum',cat:'Museum',city:'London',catColor:'#8b5cf6',catBg:'#ede9fe',
+   website:'https://www.britishmuseum.org',
+   summary:'Founded in 1753, the British Museum holds over 8 million objects spanning 2 million years of human history. Its highlights include the Rosetta Stone, the Elgin Marbles, Egyptian mummies, and the Lewis Chessmen. Admission is free.',
+   summaryZH:'大英博物館成立於1753年，館藏超過800萬件文物，橫跨200萬年人類歷史。館內亮點包括羅塞塔石碑、艾爾金大理石雕塑、埃及木乃伊及劉易斯棋子。入場免費。',
+   facts:[{l:'Location',v:'Bloomsbury, WC1'},{l:'Open',v:'Daily 10am–5pm (Fri to 8:30pm)'},{l:'Entry',v:'Free'},{l:'Tube',v:'Holborn / Tottenham Court Rd'}],
+   notes:'',img:null},
+  {id:'nhmn',name:'Natural History Museum',cat:'Museum',city:'London',catColor:'#8b5cf6',catBg:'#ede9fe',
+   website:'https://www.nhm.ac.uk',
+   summary:'A magnificent Romanesque building housing 80 million specimens covering 4.5 billion years of natural history. The famous Blue Whale skeleton in Hintze Hall, interactive dinosaur gallery, and the Darwin Centre make this one of London\'s most beloved free attractions.',
+   summaryZH:'自然歷史博物館是一座壯觀的羅馬式建築，館藏8000萬件標本，涵蓋45億年自然歷史。辛茨大廳的藍鯨骨骼、互動式恐龍展廊及達爾文中心，令此館成為倫敦最受歡迎的免費景點之一。',
+   facts:[{l:'Location',v:'South Kensington, SW7'},{l:'Open',v:'Daily 10am–5:50pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'South Kensington'}],
+   notes:'',img:null},
+  {id:'harrods',name:'Harrods',cat:'Shopping',city:'London',catColor:'#ec4899',catBg:'#fce7f3',
+   website:'https://www.harrods.com',
+   summary:'Established in 1849, Harrods is the world\'s most famous department store. Its seven floors cover 1 million square feet. The stunning Egyptian Hall food hall is an attraction in itself — even if you\'re just window shopping, the building and displays are worth seeing.',
+   summaryZH:'哈羅德百貨創立於1849年，是全球最著名的百貨公司。七層樓的面積達100萬平方呎。即使只是逛逛不消費，壯觀的埃及廳美食廣場及華麗的裝潢本身已值得一看。',
+   facts:[{l:'Location',v:'Knightsbridge, SW1'},{l:'Open',v:'Mon–Sat 10am–9pm, Sun 12–6pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'Knightsbridge'}],
+   notes:'',img:null},
+  {id:'arsenal',name:'Emirates Stadium',cat:'Sports',city:'London',catColor:'#ef4444',catBg:'#fee2e2',
+   website:'https://www.arsenal.com/tours',
+   summary:'Home of Arsenal Football Club since 2006, the Emirates Stadium seats 60,704 fans. The behind-the-scenes tour takes you through the players\' tunnel, dressing rooms, press conference room, and pitchside. A must for any football fan.',
+   summaryZH:'阿聯酋球場自2006年起成為阿仙奴足球會的主場，可容納60,704名球迷。幕後參觀行程帶您走過球員通道、更衣室、新聞發布室及球場邊緣，是球迷必到之地。',
+   facts:[{l:'Location',v:'Holloway, N7'},{l:'Tours',v:'Must pre-book online'},{l:'Entry',v:'£30/adult'},{l:'Tube',v:'Arsenal (Piccadilly)'}],
+   notes:'',img:null},
+  {id:'buckingham',name:'Buckingham Palace',cat:'Royal',city:'London',catColor:'#3b82f6',catBg:'#dbeafe',
+   website:'https://www.rct.uk/visit/the-state-rooms-buckingham-palace',
+   summary:'The official London residence of the British monarch since 1837. The Changing of the Guard ceremony is one of London\'s most famous sights. The State Rooms are open to visitors in summer (Aug–Sep). The palace faces The Mall and St James\'s Park.',
+   summaryZH:'白金漢宮自1837年起成為英國君主的倫敦正式官邸。衛兵換崗儀式是倫敦最著名的景觀之一。宮內國宴廳於夏季（8至9月）對外開放。宮殿正面朝向林蔭大道及聖詹姆士公園。',
+   facts:[{l:'Location',v:'Westminster, SW1'},{l:'Guard change',v:'Check royal.uk for schedule'},{l:'Outside',v:'Free'},{l:'Tube',v:'St James\'s Park / Victoria'}],
+   notes:'',img:null},
+  {id:'oxford',name:'Oxford',cat:'Day Trip',city:'Oxford',catColor:'#6b7280',catBg:'#f3f4f6',
+   website:'https://www.visitoxfordandoxfordshire.com',
+   summary:'One of the world\'s oldest and most prestigious university cities. Founded in the 12th century, Oxford is home to 38 colleges including Christ Church (filming location for Harry Potter), the Bodleian Library, and the stunning Radcliffe Camera. The city centre is compact and walkable.',
+   summaryZH:'牛津是世界上最古老、最負盛名的大學城之一，創建於12世紀。牛津擁有38所學院，包括基督堂學院（哈利波特取景地）、波德林圖書館及壯觀的雷德克里夫相機樓。市中心範圍緊湊，步行即可遊覽。',
+   facts:[{l:'Distance',v:'~90km from London'},{l:'Train',v:'Paddington, ~1hr'},{l:'Cost',v:'£30–40 return'},{l:'Best for',v:'Architecture, history'}],
+   notes:'',img:null},
+  {id:'eiffel',name:'Eiffel Tower',cat:'Landmark',city:'Paris',catColor:'#3b82f6',catBg:'#dbeafe',
+   website:'https://www.toureiffel.paris/en',
+   summary:'Built in 1889 for the World\'s Fair by Gustave Eiffel, the tower stands 330 metres tall and was the world\'s tallest structure for 41 years. It now receives 7 million visitors a year. Book timed tickets in advance to avoid long queues — the summit views on a clear day are extraordinary.',
+   summaryZH:'艾菲爾鐵塔由居斯塔夫·艾菲爾為1889年世界博覽會而建，高330米，曾保持世界最高建築物地位達41年。現時每年接待700萬名遊客。建議提前預訂指定時段門票以避免長龍，晴天登頂所見的景色令人嘆為觀止。',
+   facts:[{l:'Location',v:'Champ de Mars, 75007'},{l:'Open',v:'Daily 9am–11:45pm'},{l:'Entry',v:'€30/adult to summit'},{l:'Book',v:'toureiffel.paris'}],
+   notes:'',img:null},
+  {id:'louvre',name:'The Louvre',cat:'Museum',city:'Paris',catColor:'#8b5cf6',catBg:'#ede9fe',
+   website:'https://www.louvre.fr/en',
+   summary:'The world\'s largest art museum and a historic monument. Home to 35,000 works including the Mona Lisa, the Venus de Milo, and the Winged Victory of Samothrace. The iconic glass pyramid entrance was designed by I.M. Pei in 1989. Allow a full morning — it is vast.',
+   summaryZH:'羅浮宮是全球最大的藝術博物館，同時也是一座歷史古蹟。館內珍藏3.5萬件藝術品，包括蒙娜麗莎、米洛的維納斯及薩莫色雷斯的勝利女神像。標誌性的玻璃金字塔入口由貝聿銘於1989年設計。建議預留整個上午遊覽，因館內規模龐大。',
+   facts:[{l:'Location',v:'Rue de Rivoli, 75001'},{l:'Open',v:'Daily except Tue, 9am–6pm'},{l:'Entry',v:'€22/adult'},{l:'Book',v:'Timed entry essential'}],
+   notes:'',img:null},
+  {id:'versailles',name:'Palace of Versailles',cat:'Royal',city:'Paris',catColor:'#f59e0b',catBg:'#fef3c7',
+   website:'https://en.chateauversailles.fr',
+   summary:'The Royal Château de Versailles was the seat of French political power from 1682 to 1789. The Hall of Mirrors, State Apartments, and vast formal gardens are breathtaking. Originally a hunting lodge, it was transformed by Louis XIV into the ultimate symbol of royal power.',
+   summaryZH:'凡爾賽宮是法國皇室自1682至1789年的政治權力中心。鏡廳、御殿及廣闊的法式庭園令人歎為觀止。這座宮殿原為狩獵行宮，後由路易十四改建成皇權的終極象徵。',
+   facts:[{l:'Location',v:'78000 Versailles'},{l:'Open',v:'Tue–Sun 9am–5:30pm'},{l:'Entry',v:'€20/adult (gardens free)'},{l:'Train',v:'RER C from Paris ~40min'}],
+   notes:'',img:null},
+  {id:'kew',name:'Kew Gardens',cat:'Nature',city:'London',catColor:'#10b981',catBg:'#dcfce7',
+   summary:'The Royal Botanic Gardens at Kew is a UNESCO World Heritage Site spanning 132 hectares. Home to the world\'s largest collection of living plants, including the iconic Victorian Palm House glasshouse, the Treetop Walkway, and thousands of species from every continent.',
+   summaryZH:'邱園（皇家植物園）是聯合國教科文組織世界遺產，佔地132公頃。園內擁有全球最大的活植物收藏，包括標誌性的維多利亞時代棕櫚屋玻璃溫室、樹頂步道，以及來自世界各大洲的數千種植物。',
+   facts:[{l:'Location',v:'Richmond, TW9'},{l:'Open',v:'Daily 10am–dusk'},{l:'Entry',v:'£22/adult'},{l:'Tube',v:'District Line to Kew'}],
+   notes:'',img:null},
+  {id:'british-museum',name:'British Museum',cat:'Museum',city:'London',catColor:'#8b5cf6',catBg:'#ede9fe',
+   summary:'Founded in 1753, the British Museum holds over 8 million objects spanning 2 million years of human history. Its highlights include the Rosetta Stone, the Elgin Marbles, Egyptian mummies, and the Lewis Chessmen. Admission is free.',
+   summaryZH:'大英博物館成立於1753年，館藏超過800萬件文物，橫跨200萬年人類歷史。館內亮點包括羅塞塔石碑、艾爾金大理石雕塑、埃及木乃伊及劉易斯棋子。入場免費。',
+   facts:[{l:'Location',v:'Bloomsbury, WC1'},{l:'Open',v:'Daily 10am–5pm (Fri to 8:30pm)'},{l:'Entry',v:'Free'},{l:'Tube',v:'Holborn / Tottenham Court Rd'}],
+   notes:'',img:null},
+  {id:'nhmn',name:'Natural History Museum',cat:'Museum',city:'London',catColor:'#8b5cf6',catBg:'#ede9fe',
+   summary:'A magnificent Romanesque building housing 80 million specimens covering 4.5 billion years of natural history. The famous Blue Whale skeleton in Hintze Hall, interactive dinosaur gallery, and the Darwin Centre make this one of London\'s most beloved free attractions.',
+   summaryZH:'自然歷史博物館是一座壯觀的羅馬式建築，館藏8000萬件標本，涵蓋45億年自然歷史。辛茨大廳的藍鯨骨骼、互動式恐龍展廊及達爾文中心，令此館成為倫敦最受歡迎的免費景點之一。',
+   facts:[{l:'Location',v:'South Kensington, SW7'},{l:'Open',v:'Daily 10am–5:50pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'South Kensington'}],
+   notes:'',img:null},
+  {id:'harrods',name:'Harrods',cat:'Shopping',city:'London',catColor:'#ec4899',catBg:'#fce7f3',
+   summary:'Established in 1849, Harrods is the world\'s most famous department store. Its seven floors cover 1 million square feet. The stunning Egyptian Hall food hall is an attraction in itself — even if you\'re just window shopping, the building and displays are worth seeing.',
+   summaryZH:'哈羅德百貨創立於1849年，是全球最著名的百貨公司。七層樓的面積達100萬平方呎。即使只是逛逛不消費，壯觀的埃及廳美食廣場及華麗的裝潢本身已值得一看。',
+   facts:[{l:'Location',v:'Knightsbridge, SW1'},{l:'Open',v:'Mon–Sat 10am–9pm, Sun 12–6pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'Knightsbridge'}],
+   notes:'',img:null},
+];
+
+var currentDayIdx = 0;
+var dragSrc = null;
+var activeGuideFilter = 'All';
+var modalMode = '';
+var modalTarget = null;
+
+// ─── RENDER FLIGHTS ──────────────────────────────────────────────────────────
+function renderFlights(){
+  var html = '';
+  // Group into outbound / return
+  var groups = [
+    {label:'Outbound — HKG → LHR',legs:['f1','f2'],color:'#c9973a'},
+    {label:'Return — LGW → HKG',legs:['f3','f4'],color:'#7c9bbf'}
+  ];
+  groups.forEach(function(g){
+    html += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:8px;margin-top:4px">'+g.label+'</div>';
+    g.legs.forEach(function(fid){
+      var f = flights.find(function(x){return x.id===fid;});
+      html += '<div class="flight-card" style="background:'+f.bg+'">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+      html += '<div><div class="label-sm" style="color:rgba(255,255,255,.45)">'+f.label+'</div>';
+      html += '<div class="flight-num" id="disp-num-'+f.id+'">'+f.num+'</div>';
+      html += '<div class="flight-route" id="disp-route-'+f.id+'">'+f.route+'</div></div>';
+      html += '<span style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.75);font-size:11px;padding:3px 9px;border-radius:20px;white-space:nowrap;margin-top:2px">'+f.cabin+'</span>';
+      html += '</div>';
+      html += '<div class="flight-details">';
+      html += '<div class="fl-detail"><div class="fl-label">Departs</div><div class="fl-val" id="disp-dep-'+f.id+'">'+f.dep+'</div></div>';
+      html += '<div class="fl-detail"><div class="fl-label">Arrives</div><div class="fl-val" id="disp-arr-'+f.id+'">'+f.arr+'</div></div>';
+      html += '<div class="fl-detail"><div class="fl-label">Gate</div><div class="fl-val" id="disp-gate-'+f.id+'">'+f.gate+'</div></div>';
+      html += '</div>';
+      html += '<button class="edit-btn" onclick="openFlightInline(\''+f.id+'\')">✏ Edit</button>';
+      html += '<div class="flight-inline-edit" id="inline-'+f.id+'" style="display:none;margin-top:12px;background:rgba(255,255,255,.08);border-radius:10px;padding:12px;">';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+      html += flightInlineField('Flight No.','num',f.id,f.num);
+      html += flightInlineField('Departs','dep',f.id,f.dep);
+      html += flightInlineField('Arrives','arr',f.id,f.arr);
+      html += flightInlineField('Terminal','terminal',f.id,f.terminal);
+      html += flightInlineField('Gate','gate',f.id,f.gate);
+      html += flightInlineField('Cabin','cabin',f.id,f.cabin);
+      html += '</div>';
+      html += '<div style="display:flex;gap:8px;margin-top:10px">';
+      html += '<button onclick="applyFlightInline(\''+f.id+'\')" style="flex:2;padding:9px;background:rgba(255,255,255,.9);color:var(--navy);border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font-body)">Save changes</button>';
+      html += '<button onclick="closeFlightInline(\''+f.id+'\')" style="flex:1;padding:9px;background:transparent;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.2);border-radius:8px;font-size:13px;cursor:pointer;font-family:var(--font-body)">Cancel</button>';
+      html += '</div></div>';
+      html += '</div>';
+    });
+  });
+  document.getElementById('flight-cards').innerHTML = html;
+}
+
+function flightInlineField(label,field,fid,val){
+  return '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.5);margin-bottom:3px">'+label+'</div>'
+    +'<input id="fi-'+field+'-'+fid+'" value="'+val+'" oninput="syncFlightLive(\''+fid+'\',\''+field+'\',this.value)" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:13px;font-family:var(--font-body);outline:none;"></div>';
+}
+
+function syncFlightLive(fid, field, val){
+  // live update display spans as user types
+  var dispMap = {num:'disp-num-',dep:'disp-dep-',arr:'disp-arr-',gate:'disp-gate-',route:'disp-route-'};
+  if(dispMap[field]){
+    var el = document.getElementById(dispMap[field]+fid);
+    if(el) el.textContent = val;
+  }
+}
+
+function openFlightInline(fid){
+  document.querySelectorAll('.flight-inline-edit').forEach(function(el){el.style.display='none';});
+  document.getElementById('inline-'+fid).style.display='block';
+}
+function closeFlightInline(fid){
+  document.getElementById('inline-'+fid).style.display='none';
+}
+function applyFlightInline(fid){
+  var f = flights.find(function(x){return x.id===fid;});
+  ['num','dep','arr','terminal','gate','cabin'].forEach(function(field){
+    var el = document.getElementById('fi-'+field+'-'+fid);
+    if(el) f[field] = el.value;
+  });
+  // also sync route if changed
+  var routeEl = document.getElementById('fi-route-'+fid);
+  if(routeEl) f.route = routeEl.value;
+  renderFlights();
+}
+
+// ─── RENDER ACCOMS ──────────────────────────────────────────────────────────
+function renderAccoms(){
+  var html = '';
+  accoms.forEach(function(a){
+    html += '<div class="card">';
+    html += '<div class="accom-row">';
+    html += '<div class="accom-pin">'+a.icon+'</div>';
+    html += '<div class="accom-info" style="flex:1">';
+    html += '<div class="label-sm">'+a.city+' · '+a.dates+'</div>';
+    html += '<h3>'+a.name+'</h3>';
+    html += '<p>'+a.addr+'</p>';
+    html += '<div class="info-row"><span class="il">Nearest</span><span class="iv">'+a.nearTube+'</span></div>';
+    html += '<div class="info-row"><span class="il">Check-in</span><span class="iv">'+a.checkin+'</span></div>';
+    html += '<div class="info-row"><span class="il">Wi-Fi</span><span class="iv">'+a.wifi+'</span></div>';
+    html += '<span class="badge '+a.badgeCls+'">'+a.nights+'</span>';
+    html += '</div></div>';
+    html += '<button onclick="openModal(\'accom\',\''+a.id+'\')" style="margin-top:12px;width:100%;padding:10px;border:1px solid var(--border);border-radius:9px;background:transparent;font-family:var(--font-body);font-size:14px;color:var(--muted);cursor:pointer;">✏ Edit accommodation</button>';
+    html += '</div>';
+  });
+  document.getElementById('accom-cards').innerHTML = html;
+}
+
+// ─── RENDER CUSTOM EMERG ─────────────────────────────────────────────────────
+function renderEmerg(){
+  var el = document.getElementById('custom-emerg-list');
+  if(!customEmerg.length){el.innerHTML='';return;}
+  var html = '';
+  customEmerg.forEach(function(e,i){
+    html += '<div class="emerg-row"><span class="emerg-label">'+e.label+'</span><span class="emerg-num" style="display:flex;align-items:center;gap:8px">'+e.num+'<button onclick="deleteEmerg('+i+')" style="background:none;border:none;color:#fca5a5;cursor:pointer;font-size:16px">×</button></span></div>';
+  });
+  el.innerHTML = html;
+}
+function deleteEmerg(i){ customEmerg.splice(i,1); renderEmerg(); }
+
+// ─── WEATHER ────────────────────────────────────────────────────────────────
+var W_ICONS = {
+  sun: '<svg viewBox="0 0 32 32" width="28" height="28"><circle cx="16" cy="16" r="6" fill="#f59e0b"/><g stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><line x1="16" y1="3" x2="16" y2="7"/><line x1="16" y1="25" x2="16" y2="29"/><line x1="3" y1="16" x2="7" y2="16"/><line x1="25" y1="16" x2="29" y2="16"/><line x1="7.5" y1="7.5" x2="10.3" y2="10.3"/><line x1="21.7" y1="21.7" x2="24.5" y2="24.5"/><line x1="24.5" y1="7.5" x2="21.7" y2="10.3"/><line x1="10.3" y1="21.7" x2="7.5" y2="24.5"/></g></svg>',
+  cloud: '<svg viewBox="0 0 32 32" width="28" height="28"><path d="M24 22H9a6 6 0 01-.6-11.96A7 7 0 0122 14.5 4.5 4.5 0 0124 22z" fill="#94a3b8"/></svg>',
+  partcloud: '<svg viewBox="0 0 32 32" width="28" height="28"><circle cx="13" cy="13" r="5" fill="#fbbf24"/><path d="M22 24H10a5 5 0 01-.5-9.97A6 6 0 0120 17.5 3.5 3.5 0 0122 24z" fill="#94a3b8"/></svg>',
+  rain: '<svg viewBox="0 0 32 32" width="28" height="28"><path d="M23 19H9a6 6 0 01-.6-11.96A7 7 0 0122 11.5 4.5 4.5 0 0123 19z" fill="#94a3b8"/><g stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="22" x2="9" y2="26"/><line x1="14" y1="22" x2="13" y2="26"/><line x1="18" y1="22" x2="17" y2="26"/><line x1="22" y1="22" x2="21" y2="26"/></g></svg>',
+  shower: '<svg viewBox="0 0 32 32" width="28" height="28"><circle cx="11" cy="10" r="4" fill="#fbbf24"/><path d="M23 20H10a5 5 0 01-.5-9.97A6 6 0 0120 13.5 3.5 3.5 0 0123 20z" fill="#94a3b8"/><g stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round"><line x1="11" y1="23" x2="10" y2="27"/><line x1="15" y1="23" x2="14" y2="27"/><line x1="19" y1="23" x2="18" y2="27"/></g></svg>',
+  storm: '<svg viewBox="0 0 32 32" width="28" height="28"><path d="M23 18H9a6 6 0 01-.6-11.96A7 7 0 0122 10.5 4.5 4.5 0 0123 18z" fill="#64748b"/><polyline points="17,20 13,26 17,26 13,32" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  fog: '<svg viewBox="0 0 32 32" width="28" height="28"><g stroke="#94a3b8" stroke-width="2" stroke-linecap="round"><line x1="6" y1="12" x2="26" y2="12"/><line x1="8" y1="17" x2="24" y2="17"/><line x1="10" y1="22" x2="22" y2="22"/></g></svg>'
+};
+
+function wCode2Icon(code){
+  if(code===0) return W_ICONS.sun;
+  if(code<=2) return W_ICONS.partcloud;
+  if(code<=3) return W_ICONS.cloud;
+  if(code<=48) return W_ICONS.fog;
+  if(code<=57) return W_ICONS.shower;
+  if(code<=67) return W_ICONS.rain;
+  if(code<=77) return W_ICONS.cloud;
+  if(code<=82) return W_ICONS.shower;
+  return W_ICONS.storm;
+}
+
+function wCode2Desc(code){
+  if(code===0) return 'Sunny';
+  if(code<=2) return 'Partly cloudy';
+  if(code<=3) return 'Cloudy';
+  if(code<=48) return 'Foggy';
+  if(code<=57) return 'Light rain';
+  if(code<=67) return 'Rain';
+  if(code<=77) return 'Snow';
+  if(code<=82) return 'Showers';
+  return 'Thunderstorm';
+}
+
+function renderWeatherGrid(days){
+  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var html='<div class="weather-grid">';
+  days.forEach(function(d){
+    var dt=new Date(d.date);
+    html+='<div class="w-day">';
+    html+='<div class="w-date">'+dn[dt.getDay()]+'<br>'+dt.getDate()+'/'+(dt.getMonth()+1)+'</div>';
+    html+='<div class="w-icon" style="display:flex;justify-content:center;margin:5px 0 3px">'+d.icon+'</div>';
+    html+='<div class="w-hi">'+d.hi+'°</div>';
+    html+='<div class="w-lo">'+d.lo+'°</div>';
+    html+='<div style="font-size:9px;color:var(--muted);margin-top:2px;line-height:1.2">'+d.desc+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  html+='<div style="font-size:11px;color:var(--muted);text-align:right;margin-top:6px">'+
+    '<span id="wx-src">📡 Loading…</span></div>';
+  return html;
+}
+
+function loadWeather(){
+  // Show placeholder immediately with typical London May weather
+  var today = new Date();
+  var placeholder = [];
+  var typicalCodes=[1,3,61,2,0,80,3];
+  var typicalHi=[16,14,13,17,18,15,14];
+  var typicalLo=[9,8,9,10,11,9,8];
+  for(var i=0;i<7;i++){
+    var d=new Date(today); d.setDate(today.getDate()+i);
+    placeholder.push({date:d.toISOString().slice(0,10),icon:wCode2Icon(typicalCodes[i]),hi:typicalHi[i],lo:typicalLo[i],desc:wCode2Desc(typicalCodes[i])});
+  }
+  document.getElementById('weather-box').innerHTML=renderWeatherGrid(placeholder);
+  document.getElementById('wx-src').textContent='📅 Typical May forecast — loading live…';
+
+  // Then try to fetch live data
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=51.5074&longitude=-0.1278&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/London&forecast_days=7')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var live=[];
+      for(var i=0;i<7;i++){
+        live.push({
+          date:data.daily.time[i],
+          icon:wCode2Icon(data.daily.weathercode[i]),
+          hi:Math.round(data.daily.temperature_2m_max[i]),
+          lo:Math.round(data.daily.temperature_2m_min[i]),
+          desc:wCode2Desc(data.daily.weathercode[i])
+        });
+      }
+      document.getElementById('weather-box').innerHTML=renderWeatherGrid(live);
+      document.getElementById('wx-src').textContent='📡 Live data · Open-Meteo';
+    }).catch(function(){
+      // already showing placeholder — just update source label
+      var src=document.getElementById('wx-src');
+      if(src) src.textContent='📅 Typical May forecast for London';
+    });
+}
+
+// ─── ITINERARY ───────────────────────────────────────────────────────────────
+function buildDayScroll(){
+  var html='';
+  itinerary.forEach(function(d,i){
+    var cls='day-chip '+d.type+(i===0?' active':'');
+    html+='<button class="'+cls+'" id="dc-'+i+'" onclick="selectDay('+i+')">'+d.date+'</button>';
+  });
+  document.getElementById('day-scroll').innerHTML=html;
+  renderDay(0);
+}
+
+function selectDay(i){
+  currentDayIdx=i;
+  document.querySelectorAll('.day-chip').forEach(function(b){b.classList.remove('active');});
+  var btn=document.getElementById('dc-'+i);
+  if(btn){btn.classList.add('active');btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}
+  renderDay(i);
+}
+
+function renderDay(i){
+  var d=itinerary[i];
+  var paceMap={travel:'pace-travel',rest:'pace-light',sightseeing:'pace-med',food:'pace-light',paris:'pace-full',suggestion:'pace-med'};
+  var paceLabel={travel:'Travel Day',rest:'Light Day ✓',sightseeing:'Moderate',food:'Easy Day',paris:'Paris ✦',suggestion:'Suggestion'};
+  var typeBg={paris:'background:#eff6ff;border-radius:14px;padding:16px;',suggestion:'background:#fffbeb;border-radius:14px;padding:16px;',travel:'background:#f0fdf4;border-radius:14px;padding:16px;'};
+  var bg=typeBg[d.type]||'';
+
+  var html='<div style="'+bg+'">';
+  if(d.type==='suggestion') html+='<div style="font-size:13px;color:#b45309;background:#fef3c7;padding:8px 12px;border-radius:9px;margin-bottom:12px">💡 Suggested — feel free to swap for your own plan!</div>';
+  html+='<div class="day-header-row"><div><div class="day-big-title">'+d.date+' · '+d.day+'</div><div class="day-sublabel">'+d.label+'</div></div>';
+  html+='<span class="pace-pill '+(paceMap[d.type]||'pace-med')+'">'+(paceLabel[d.type]||'')+'</span></div>';
+  html+='<div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center">Hold &amp; drag to reorder · tap ✏ to edit</div>';
+  html+='<div class="timeline" id="tl-'+i+'">';
+
+  d.activities.forEach(function(act,j){
+    html+=renderActivity(act,i,j);
+  });
+  html+='</div>';
+  html+='<button class="add-activity-btn" onclick="openModal(\'add-act\','+i+')">+ Add activity</button>';
+  html+='</div>';
+  document.getElementById('day-view').innerHTML=html;
+  bindDrag(i);
+}
+
+function mapsUrl(addr){
+  return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr);
+}
+
+function renderActivity(act,di,ai){
+  var h='<div class="activity" draggable="true" id="act-'+di+'-'+ai+'" data-di="'+di+'" data-ai="'+ai+'">';
+  h+='<div class="act-top"><span class="act-name">'+act.name+'</span><span class="act-cost">'+act.cost+'</span></div>';
+  h+='<div class="act-meta"><span>🕐 '+act.time+'</span></div>';
+  // Address row with map button
+  h+='<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">';
+  h+='<span style="font-size:13px;color:var(--muted);flex:1">📍 '+act.addr+'</span>';
+  if(act.addr && act.addr!=='Home' && act.addr!=='TBC'){
+    h+='<a href="'+mapsUrl(act.addr)+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:#1a73e8;background:#e8f0fe;padding:4px 10px;border-radius:20px;text-decoration:none;flex-shrink:0;white-space:nowrap;">'+
+      '<svg width="11" height="11" viewBox="0 0 24 24" fill="#1a73e8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>'+
+      'Map</a>';
+  }
+  h+='</div>';
+  if(act.note) h+='<div class="act-note">'+act.note+'</div>';
+  h+='<div class="act-actions"><button class="act-edit-btn" onclick="openModal(\'edit-act\','+di+','+ai+')">✏ Edit</button><button class="act-del-btn" onclick="deleteActivity('+di+','+ai+')">Delete</button></div>';
+  h+='</div>';
+  return h;
+}
+
+function deleteActivity(di,ai){
+  if(confirm('Delete this activity?')){
+    itinerary[di].activities.splice(ai,1);
+    renderDay(di);
+  }
+}
+
+function bindDrag(di){
+  var els=document.querySelectorAll('.activity');
+  els.forEach(function(el){
+    el.addEventListener('dragstart',function(e){
+      dragSrc={di:parseInt(el.dataset.di),ai:parseInt(el.dataset.ai)};
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    el.addEventListener('dragend',function(){el.classList.remove('dragging');});
+    el.addEventListener('dragover',function(e){e.preventDefault();el.classList.add('dragover');});
+    el.addEventListener('dragleave',function(){el.classList.remove('dragover');});
+    el.addEventListener('drop',function(e){
+      e.preventDefault();
+      el.classList.remove('dragover');
+      if(!dragSrc) return;
+      var tdi=parseInt(el.dataset.di),tai=parseInt(el.dataset.ai);
+      if(dragSrc.di===tdi && dragSrc.ai!==tai){
+        var acts=itinerary[tdi].activities;
+        var moved=acts.splice(dragSrc.ai,1)[0];
+        var ni=dragSrc.ai<tai?tai-1:tai;
+        acts.splice(ni,0,moved);
+        renderDay(tdi);
+      }
+      dragSrc=null;
+    });
+  });
+}
+
+// ─── BUDGET ──────────────────────────────────────────────────────────────────
+function loadFX(){
+  fetch('https://api.exchangerate-api.com/v4/latest/GBP')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      fxRate=d.rates.HKD||9.85;
+      document.getElementById('fx-rate-label').textContent='1 GBP = '+fxRate.toFixed(4)+' HKD · Live rate';
+    }).catch(function(){
+      document.getElementById('fx-rate-label').textContent='1 GBP ≈ 9.85 HKD · Estimated';
+    });
+}
+function cGBP(v){var h=parseFloat(v)*fxRate;document.getElementById('hkd-in').value=isNaN(h)?'':h.toFixed(2);}
+function cHKD(v){var g=parseFloat(v)/fxRate;document.getElementById('gbp-in').value=isNaN(g)?'':g.toFixed(2);}
+
+function buildCatGrid(){
+  var maxV=Math.max.apply(null,Object.values(catTotals).concat([1]));
+  var html='';
+  Object.keys(catTotals).forEach(function(c){
+    var pct=Math.min(100,(catTotals[c]/maxV)*100);
+    html+='<div class="cat-card"><div class="cat-name">'+c+'</div><div class="cat-amt" style="color:'+catColors[c]+'">£'+catTotals[c].toFixed(2)+'</div><div class="cat-bar-bg"><div class="cat-bar-fill" style="background:'+catColors[c]+';width:'+pct+'%"></div></div></div>';
+  });
+  document.getElementById('cat-grid').innerHTML=html;
+}
+
+function refreshBudget(){
+  var budget=parseFloat(document.getElementById('budget-max').value)||3000;
+  var spent=expenses.reduce(function(s,e){return s+e.gbp;},0);
+  var pct=Math.min(100,(spent/budget)*100);
+  document.getElementById('spent-disp').textContent=spent.toFixed(2);
+  document.getElementById('remain-disp').textContent=Math.max(0,budget-spent).toFixed(2);
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-fill').style.background=pct>90?'linear-gradient(90deg,#ef4444,#f97316)':pct>70?'linear-gradient(90deg,#f59e0b,#eab308)':'linear-gradient(90deg,#c9973a,#e8a83c)';
+  document.getElementById('grand-total').textContent=spent.toFixed(2);
+}
+
+function addExp(){
+  var desc=document.getElementById('exp-desc').value.trim();
+  var amt=parseFloat(document.getElementById('exp-amt').value);
+  var curr=document.getElementById('exp-curr').value;
+  var cat=document.getElementById('exp-cat').value;
+  var payer=document.getElementById('exp-payer').value;
+  if(!desc||isNaN(amt)||amt<=0){alert('Enter a description and amount.');return;}
+  var gbp=curr==='gbp'?amt:amt/fxRate;
+  expenses.push({id:Date.now(),desc:desc,amt:amt,curr:curr,gbp:gbp,cat:cat,payer:payer});
+  catTotals[cat]=(catTotals[cat]||0)+gbp;
+  document.getElementById('exp-desc').value='';
+  document.getElementById('exp-amt').value='';
+  renderExpenses();buildCatGrid();refreshBudget();renderPayerSummary();
+}
+
+function delExp(id){
+  var e=expenses.find(function(x){return x.id===id;});
+  if(e){catTotals[e.cat]-=e.gbp;expenses=expenses.filter(function(x){return x.id!==id;});}
+  renderExpenses();buildCatGrid();refreshBudget();renderPayerSummary();
+}
+
+var payerColors={'Dad':'#3b82f6','Mum':'#ec4899','Me':'#f59e0b','Shared':'#10b981'};
+var payerBg={'Dad':'#dbeafe','Mum':'#fce7f3','Me':'#fef3c7','Shared':'#dcfce7'};
+var payerEmoji={'Dad':'👨','Mum':'👩','Me':'🧑','Shared':'🤝'};
+
+function renderPayerSummary(){
+  var el=document.getElementById('payer-summary');
+  if(!expenses.length){el.style.display='none';return;}
+  var totals={};
+  expenses.forEach(function(e){
+    var p=e.payer||'Unknown';
+    totals[p]=(totals[p]||0)+e.gbp;
+  });
+  var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;">';
+  Object.keys(totals).forEach(function(p){
+    var col=payerColors[p]||'#6b7280';
+    var bg=payerBg[p]||'#f3f4f6';
+    var em=payerEmoji[p]||'👤';
+    html+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 10px;text-align:center;">';
+    html+='<div style="font-size:22px;margin-bottom:4px">'+em+'</div>';
+    html+='<div style="font-size:12px;color:'+col+';font-weight:600;background:'+bg+';display:inline-block;padding:2px 10px;border-radius:20px;margin-bottom:6px">'+p+'</div>';
+    html+='<div style="font-size:17px;font-weight:700;color:var(--navy)">£'+totals[p].toFixed(2)+'</div>';
+    html+='<div style="font-size:11px;color:var(--muted);margin-top:2px">HK$'+(totals[p]*fxRate).toFixed(0)+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  el.style.display='block';
+  el.innerHTML=html;
+}
+
+function renderExpenses(){
+  var el=document.getElementById('exp-list');
+  if(!expenses.length){el.innerHTML='<div style="text-align:center;padding:18px;color:var(--muted);font-size:14px">No expenses yet.</div>';return;}
+  var html='';
+  expenses.forEach(function(e){
+    var sym=e.curr==='gbp'?'£':'HK$';
+    var p=e.payer||'?';
+    var col=payerColors[p]||'#6b7280';
+    var bg=payerBg[p]||'#f3f4f6';
+    var em=payerEmoji[p]||'👤';
+    html+='<div class="exp-row">';
+    html+='<span class="exp-name">'+e.desc+'</span>';
+    html+='<span class="exp-cat">'+e.cat+'</span>';
+    html+='<span style="font-size:12px;background:'+bg+';color:'+col+';padding:2px 8px;border-radius:20px;white-space:nowrap;font-weight:500">'+em+' '+p+'</span>';
+    html+='<span class="exp-amt">'+sym+e.amt.toFixed(2)+' <span class="exp-gbp-note">(£'+e.gbp.toFixed(2)+')</span></span>';
+    html+='<button class="exp-del" onclick="delExp('+e.id+')">×</button>';
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+// ─── GUIDE ───────────────────────────────────────────────────────────────────
+function buildGuideFilters(){
+  var cats=['All','London','Paris','Museum','Market','Nature','Royal','Landmark','Day Trip','Shopping','Sports'];
+  var html='';
+  cats.forEach(function(c){
+    html+='<button class="gf-btn'+(c==='All'?' active':'')+'" onclick="setGuideFilter(\''+c+'\')">'+c+'</button>';
+  });
+  document.getElementById('guide-filter').innerHTML=html;
+}
+
+function setGuideFilter(f){
+  activeGuideFilter=f;
+  document.querySelectorAll('.gf-btn').forEach(function(b){b.classList.toggle('active',b.textContent===f);});
+  renderGuide(document.querySelector('.guide-search').value);
+}
+
+function filterGuide(q){renderGuide(q);}
+
+function renderGuide(q){
+  q=(q||'').toLowerCase();
+  var html='';
+  guideData.forEach(function(g){
+    var matchCity=activeGuideFilter==='All'||g.cat===activeGuideFilter||g.city===activeGuideFilter;
+    var matchQ=!q||g.name.toLowerCase().includes(q)||g.cat.toLowerCase().includes(q)||g.summary.toLowerCase().includes(q);
+    if(!matchCity||!matchQ) return;
+    html+=renderGuideCard(g);
+  });
+  if(!html) html='<div style="text-align:center;padding:30px;color:var(--muted)">No attractions found.</div>';
+  document.getElementById('guide-cards').innerHTML=html;
+}
+
+function renderGuideCard(g){
+  var h='<div class="guide-card" id="gc-'+g.id+'">';
+  if(g.img){
+    h+='<img class="guide-img" src="'+g.img+'" alt="'+g.name+'">';
+  } else {
+    var emojis={Museum:'🏛',Market:'🧺',Nature:'🌿',Royal:'👑',Landmark:'🗼',Sports:'⚽','Day Trip':'🚆',Shopping:'🛍',Food:'🍽',Other:'📍'};
+    h+='<div class="guide-img-placeholder">'+(emojis[g.cat]||'📍')+'</div>';
+  }
+  h+='<div class="guide-body">';
+  h+='<div class="guide-header"><span class="guide-name">'+g.name+'</span><span class="guide-cat-badge" style="background:'+g.catBg+';color:'+g.catColor+'">'+g.cat+'</span></div>';
+  h+='<div style="font-size:12px;color:var(--muted);margin-bottom:10px">📍 '+g.city+'</div>';
+
+  // Action buttons row — website + map
+  h+='<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">';
+  if(g.website){
+    var displayUrl = g.website.replace(/^https?:\/\/(www\.)?/,'').replace(/\/$/,'');
+    h+='<a href="'+g.website+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:500;color:#1a73e8;background:#e8f0fe;padding:7px 13px;border-radius:20px;text-decoration:none;flex:1;min-width:120px;justify-content:center;">'+
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'+
+      displayUrl+'</a>';
+  }
+  var mapAddr = g.name + (g.city ? ', '+g.city : '');
+  h+='<a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(mapAddr)+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:500;color:#34a853;background:#e6f4ea;padding:7px 13px;border-radius:20px;text-decoration:none;flex:1;min-width:100px;justify-content:center;">'+
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="#34a853"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>'+
+    'Google Maps</a>';
+  h+='</div>';
+
+  // English summary
+  h+='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">Background</div>';
+  h+='<div class="guide-summary">'+g.summary+'</div>';
+
+  // Traditional Chinese summary
+  if(g.summaryZH){
+    h+='<div style="margin-top:12px;padding:12px 14px;background:#f8f5ff;border-radius:10px;border-left:3px solid #8b5cf6;">';
+    h+='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#8b5cf6;margin-bottom:6px">繁體中文 · Traditional Chinese</div>';
+    h+='<div style="font-size:14px;color:#374151;line-height:1.8;font-family:\'PingFang TC\',\'Microsoft JhengHei\',sans-serif">'+g.summaryZH+'</div>';
+    h+='</div>';
+  }
+
+  var factsHtml='';
+  g.facts.forEach(function(f){
+    factsHtml+='<div class="guide-fact-row"><span class="fact-label">'+f.l+'</span><span class="fact-val">'+f.v+'</span></div>';
+  });
+  h+='<div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:14px 0 4px">Key Facts</div>'+factsHtml;
+  h+='<div class="guide-notes-label">Your Notes</div>';
+  h+='<textarea class="guide-notes-area" placeholder="Add your notes, tips, or reminders here…" onchange="saveGuideNote(\''+g.id+'\',this.value)">'+g.notes+'</textarea>';
+  h+='<div class="guide-upload"><label><span>📷 Upload a photo or screenshot</span><input type="file" accept="image/*" onchange="uploadGuideImg(\''+g.id+'\',this)"></label>';
+  if(g.img) h+='<img class="guide-uploaded-img" src="'+g.img+'" alt="uploaded">';
+  h+='</div>';
+  h+='</div>';
+  h+='</div>';
+  return h;
+}
+
+function saveGuideNote(id,val){
+  var g=guideData.find(function(x){return x.id===id;});
+  if(g) g.notes=val;
+}
+
+function uploadGuideImg(id,input){
+  var g=guideData.find(function(x){return x.id===id;});
+  if(!g||!input.files[0]) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    g.img=e.target.result;
+    renderGuide(document.querySelector('.guide-search').value);
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+function openModal(mode, a, b){
+  modalMode=mode; modalTarget={a:a,b:b};
+  var html='';
+  if(mode==='_unused_flight'){
+    // flights now use inline editing — see openFlightInline()
+  } else if(mode==='accom'){
+    var ac=accoms.find(function(x){return x.id===a;});
+    html='<h3>Edit '+ac.city+' Accommodation</h3>';
+    html+='<div class="modal-field"><label>Name / Hotel</label><input id="ma-name" value="'+ac.name+'"></div>';
+    html+='<div class="modal-field"><label>Address</label><input id="ma-addr" value="'+ac.addr+'"></div>';
+    html+='<div class="modal-field"><label>Nearest Tube / Metro</label><input id="ma-tube" value="'+ac.nearTube+'"></div>';
+    html+='<div class="modal-field"><label>Check-in</label><input id="ma-checkin" value="'+ac.checkin+'"></div>';
+    html+='<div class="modal-field"><label>Wi-Fi Password</label><input id="ma-wifi" value="'+ac.wifi+'"></div>';
+    html+='<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveAccom(\''+a+'\')">Save</button></div>';
+  } else if(mode==='edit-act'){
+    var act=itinerary[a].activities[b];
+    html='<h3>Edit Activity</h3>';
+    html+='<div class="modal-field"><label>Name</label><input id="ea-name" value="'+act.name+'"></div>';
+    html+='<div class="modal-field"><label>Time</label><input id="ea-time" value="'+act.time+'"></div>';
+    html+='<div class="modal-field"><label>Address</label><input id="ea-addr" value="'+act.addr+'"></div>';
+    html+='<div class="modal-field"><label>Cost</label><input id="ea-cost" value="'+act.cost+'"></div>';
+    html+='<div class="modal-field"><label>Notes / Tips</label><textarea id="ea-note">'+act.note+'</textarea></div>';
+    html+='<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveAct()">Save</button></div>';
+  } else if(mode==='add-act'){
+    html='<h3>Add Activity — '+itinerary[a].date+'</h3>';
+    html+='<div class="modal-field"><label>Name</label><input id="na-name" placeholder="e.g. National Gallery"></div>';
+    html+='<div class="modal-field"><label>Time</label><input id="na-time" placeholder="e.g. 10:00am"></div>';
+    html+='<div class="modal-field"><label>Address</label><input id="na-addr" placeholder="Full address"></div>';
+    html+='<div class="modal-field"><label>Cost</label><input id="na-cost" placeholder="e.g. Free / £15/person"></div>';
+    html+='<div class="modal-field"><label>Notes / Tips</label><textarea id="na-note" placeholder="Any tips or reminders…"></textarea></div>';
+    html+='<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="addAct()">Add</button></div>';
+  } else if(mode==='add-guide'){
+    html='<h3>Add New Attraction</h3>';
+    html+='<div class="modal-field"><label>Name</label><input id="ng-name" placeholder="e.g. Tate Modern"></div>';
+    html+='<div class="modal-field"><label>City</label><input id="ng-city" placeholder="London / Paris / Oxford…"></div>';
+    html+='<div class="modal-field"><label>Category</label><select id="ng-cat"><option>Museum</option><option>Market</option><option>Nature</option><option>Royal</option><option>Landmark</option><option>Sports</option><option>Day Trip</option><option>Shopping</option><option>Food</option><option>Other</option></select></div>';
+    html+='<div class="modal-field"><label>Website URL</label><input id="ng-website" placeholder="https://…"></div>';
+    html+='<div class="modal-field"><label>Background (English)</label><textarea id="ng-summary" placeholder="Brief history or description…"></textarea></div>';
+    html+='<div class="modal-field"><label>背景簡介（繁體中文）</label><textarea id="ng-summaryZH" placeholder="中文簡介（可選）…"></textarea></div>';
+    html+='<div class="modal-field"><label>Opening Hours</label><input id="ng-hours" placeholder="e.g. Daily 10am–5pm"></div>';
+    html+='<div class="modal-field"><label>Entry Cost</label><input id="ng-entry" placeholder="e.g. Free / £15 adult"></div>';
+    html+='<div class="modal-field"><label>Address / Location</label><input id="ng-addr" placeholder="e.g. Bankside, SE1"></div>';
+    html+='<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveNewGuide()">Add Attraction</button></div>';
+  } else if(mode==='add-emerg'){
+    html='<h3>Add Emergency Contact</h3>';
+    html+='<div class="modal-field"><label>Label (e.g. Your mobile)</label><input id="em-label" placeholder="Your mobile"></div>';
+    html+='<div class="modal-field"><label>Number</label><input id="em-num" placeholder="+44 7xxx xxxxxx" type="tel"></div>';
+    html+='<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveEmerg()">Add</button></div>';
+  }
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal-overlay').style.display='flex';
+}
+
+function closeModal(e){
+  if(e && e.target!==document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').style.display='none';
+}
+
+function saveFlight(id){
+  var f=flights.find(function(x){return x.id===id;});
+  f.num=document.getElementById('mf-num').value;
+  f.route=document.getElementById('mf-route').value;
+  f.dep=document.getElementById('mf-dep').value;
+  f.arr=document.getElementById('mf-arr').value;
+  f.terminal=document.getElementById('mf-terminal').value;
+  f.gate=document.getElementById('mf-gate').value;
+  renderFlights();
+  document.getElementById('modal-overlay').style.display='none';
+}
+
+function saveAccom(id){
+  var ac=accoms.find(function(x){return x.id===id;});
+  ac.name=document.getElementById('ma-name').value;
+  ac.addr=document.getElementById('ma-addr').value;
+  ac.nearTube=document.getElementById('ma-tube').value;
+  ac.checkin=document.getElementById('ma-checkin').value;
+  ac.wifi=document.getElementById('ma-wifi').value;
+  renderAccoms();
+  document.getElementById('modal-overlay').style.display='none';
+}
+
+function saveAct(){
+  var di=modalTarget.a,ai=modalTarget.b;
+  var act=itinerary[di].activities[ai];
+  act.name=document.getElementById('ea-name').value;
+  act.time=document.getElementById('ea-time').value;
+  act.addr=document.getElementById('ea-addr').value;
+  act.cost=document.getElementById('ea-cost').value;
+  act.note=document.getElementById('ea-note').value;
+  renderDay(di);
+  document.getElementById('modal-overlay').style.display='none';
+}
+
+function addAct(){
+  var di=modalTarget.a;
+  var name=document.getElementById('na-name').value.trim();
+  if(!name){alert('Please enter an activity name.');return;}
+  itinerary[di].activities.push({
+    name:name,
+    time:document.getElementById('na-time').value||'TBC',
+    addr:document.getElementById('na-addr').value||'TBC',
+    cost:document.getElementById('na-cost').value||'TBC',
+    note:document.getElementById('na-note').value
+  });
+  renderDay(di);
+  document.getElementById('modal-overlay').style.display='none';
+}
+
+function saveEmerg(){
+  var label=document.getElementById('em-label').value.trim();
+  var num=document.getElementById('em-num').value.trim();
+  if(!label||!num){alert('Please fill in both fields.');return;}
+  customEmerg.push({label:label,num:num});
+  renderEmerg();
+  document.getElementById('modal-overlay').style.display='none';
+}
+
+function saveNewGuide(){
+  var name = document.getElementById('ng-name').value.trim();
+  if(!name){alert('Please enter an attraction name.');return;}
+  var cat = document.getElementById('ng-cat').value;
+  var catColorMap = {Museum:'#8b5cf6',Market:'#f59e0b',Nature:'#10b981',Royal:'#3b82f6',Landmark:'#3b82f6',Sports:'#ef4444','Day Trip':'#6b7280',Shopping:'#ec4899',Food:'#f59e0b',Other:'#6b7280'};
+  var catBgMap   = {Museum:'#ede9fe',Market:'#fef3c7',Nature:'#dcfce7',Royal:'#dbeafe',Landmark:'#dbeafe',Sports:'#fee2e2','Day Trip':'#f3f4f6',Shopping:'#fce7f3',Food:'#fef3c7',Other:'#f3f4f6'};
+  var hours = document.getElementById('ng-hours').value||'TBC';
+  var entry = document.getElementById('ng-entry').value||'TBC';
+  var addr  = document.getElementById('ng-addr').value||'TBC';
+  var newG = {
+    id: 'custom-'+Date.now(),
+    name: name,
+    cat: cat,
+    city: document.getElementById('ng-city').value||'',
+    catColor: catColorMap[cat]||'#6b7280',
+    catBg: catBgMap[cat]||'#f3f4f6',
+    website: document.getElementById('ng-website').value||'',
+    summary: document.getElementById('ng-summary').value||'',
+    summaryZH: document.getElementById('ng-summaryZH').value||'',
+    facts:[{l:'Location',v:addr},{l:'Open',v:hours},{l:'Entry',v:entry}],
+    notes:'', img:null
+  };
+  guideData.push(newG);
+  saveToStorage();
+  renderGuide(document.querySelector('.guide-search').value);
+  document.getElementById('modal-overlay').style.display='none';
+}
+
+// ─── LOCALSTORAGE PERSISTENCE ────────────────────────────────────────────────
+var STORAGE_KEY = 'london_paris_trip_2026';
+
+function saveToStorage(){
+  try {
+    var data = {
+      flights: flights,
+      accoms: accoms,
+      customEmerg: customEmerg,
+      expenses: expenses,
+      catTotals: catTotals,
+      itinerary: itinerary,
+      guideData: guideData.map(function(g){ return {id:g.id,notes:g.notes,img:g.img}; }),
+      guideCustom: guideData.filter(function(g){return g.id.indexOf('custom-')===0;}),
+      budgetMax: document.getElementById('budget-max')?document.getElementById('budget-max').value:'3000'
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e){ console.warn('Save failed',e); }
+}
+
+function loadFromStorage(){
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    var data = JSON.parse(raw);
+    if(data.flights) flights = data.flights;
+    if(data.accoms) accoms = data.accoms;
+    if(data.customEmerg) customEmerg = data.customEmerg;
+    if(data.expenses) expenses = data.expenses;
+    if(data.catTotals) catTotals = data.catTotals;
+    if(data.itinerary) itinerary = data.itinerary;
+    // restore guide notes/images for built-in cards
+    if(data.guideData) data.guideData.forEach(function(saved){
+      var g = guideData.find(function(x){return x.id===saved.id;});
+      if(g){ g.notes=saved.notes||''; g.img=saved.img||null; }
+    });
+    // restore custom-added attractions
+    if(data.guideCustom) data.guideCustom.forEach(function(g){
+      if(!guideData.find(function(x){return x.id===g.id;})) guideData.push(g);
+    });
+    return true;
+  } catch(e){ console.warn('Load failed',e); return false; }
+}
+
+// Auto-save on any edit — patch key functions
+var _origSaveAct = saveAct;
+saveAct = function(){ _origSaveAct(); saveToStorage(); };
+var _origAddAct = addAct;
+addAct = function(){ _origAddAct(); saveToStorage(); };
+var _origDeleteActivity = deleteActivity;
+deleteActivity = function(di,ai){ _origDeleteActivity(di,ai); saveToStorage(); };
+var _origSaveAccom = saveAccom;
+saveAccom = function(id){ _origSaveAccom(id); saveToStorage(); };
+var _origApplyFlightInline = applyFlightInline;
+applyFlightInline = function(fid){ _origApplyFlightInline(fid); saveToStorage(); };
+var _origAddExp = addExp;
+addExp = function(){ _origAddExp(); saveToStorage(); };
+var _origDelExp = delExp;
+delExp = function(id){ _origDelExp(id); saveToStorage(); };
+var _origSaveEmerg = saveEmerg;
+saveEmerg = function(){ _origSaveEmerg(); saveToStorage(); };
+var _origDeleteEmerg = deleteEmerg;
+deleteEmerg = function(i){ _origDeleteEmerg(i); saveToStorage(); };
+var _origSaveGuideNote = saveGuideNote;
+saveGuideNote = function(id,val){ _origSaveGuideNote(id,val); saveToStorage(); };
+var _origUploadGuideImg = uploadGuideImg;
+uploadGuideImg = function(id,input){ _origUploadGuideImg(id,input); }; // saved after img load inside fn
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+  document.querySelectorAll('.top-nav-btn').forEach(function(x){x.classList.remove('active');});
+  document.getElementById('tab-'+t).classList.add('active');
+  var idx={general:0,itinerary:1,budget:2,guide:3}[t];
+  document.querySelectorAll('.top-nav-btn')[idx].classList.add('active');
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+var restored = loadFromStorage();
+renderFlights();
+renderAccoms();
+renderEmerg();
+loadWeather();
+loadFX();
+buildDayScroll();
+buildCatGrid();
+refreshBudget();
+if(restored && document.getElementById('budget-max')){
+  // budget max restored separately after DOM ready
+}
+renderExpenses();
+buildGuideFilters();
+renderGuide('');
+renderPayerSummary();
+
+// Show save status banner
+(function(){
+  var banner = document.createElement('div');
+  banner.style.cssText='position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(26,39,68,0.92);color:#fff;font-size:13px;padding:8px 18px;border-radius:20px;z-index:100;pointer-events:none;opacity:0;transition:opacity .3s;font-family:var(--font-body);white-space:nowrap;';
+  banner.id='save-banner';
+  document.body.appendChild(banner);
+})();
+
+function showSaveBanner(msg){
+  var b=document.getElementById('save-banner');
+  if(!b) return;
+  b.textContent = msg||'✓ Saved to this device';
+  b.style.opacity='1';
+  clearTimeout(b._t);
+  b._t=setTimeout(function(){b.style.opacity='0';},2200);
+}
+
+// Override saveToStorage to show banner
+var _origSaveToStorage = saveToStorage;
+saveToStorage = function(){
+  _origSaveToStorage();
+  showSaveBanner('✓ Changes saved');
+};
+
+if(restored) showSaveBanner('📂 Your saved data restored');
+</script>
+</body>
+</html>
