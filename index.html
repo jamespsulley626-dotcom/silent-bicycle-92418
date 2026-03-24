@@ -343,104 +343,10 @@ body{display:flex;flex-direction:column;min-height:100vh;}
   </div>
 </div>
 
-<!-- FIREBASE COMPAT SDK -->
-<script src="https://unpkg.com/firebase@9.23.0/app/dist/firebase-app-compat.js"></script>
-<script src="https://unpkg.com/firebase@9.23.0/database/dist/firebase-database-compat.js"></script>
+<!-- Firebase loaded via ES module below -->
 
 <script>
-// ─── SYNC STATUS ─────────────────────────────────────────────────────────────
-var _fbReady = false;
-var _saveTimer = null;
-
-function setSyncStatus(state, msg) {
-  var dot = document.getElementById('sync-dot');
-  var lbl = document.getElementById('sync-label');
-  if(!dot) return;
-  dot.className = 'sync-dot' + (state==='syncing'?' syncing':state==='offline'?' offline':'');
-  if(lbl) lbl.textContent = msg||'Live';
-}
-
-function firebaseSave() {
-  if(!_fbReady || !window._tripRef) return;
-  clearTimeout(_saveTimer);
-  setSyncStatus('syncing','Saving…');
-  _saveTimer = setTimeout(function(){
-    try {
-      var gn={};
-      (guideData||[]).forEach(function(g){ gn[String(g.id)]={notes:g.notes||'',img:g.img||null}; });
-      var ie={};
-      (itinerary||[]).forEach(function(d,i){ ie[i]={activities:d.activities}; });
-      var fe={};
-      (flights||[]).forEach(function(f){ fe[f.id]={num:f.num,dep:f.dep,arr:f.arr,terminal:f.terminal,gate:f.gate,cabin:f.cabin}; });
-      var ae={};
-      (accoms||[]).forEach(function(a){ ae[a.id]={name:a.name,addr:a.addr,nearTube:a.nearTube,checkin:a.checkin,wifi:a.wifi}; });
-      window._tripRef.set({
-        expenses:expenses||[], catTotals:catTotals||{},
-        guideNotes:gn, guideCustom:(guideData||[]).filter(function(g){return String(g.id).indexOf('custom-')===0;}),
-        customEmerg:customEmerg||[], itinEdits:ie, flightEdits:fe, accomEdits:ae,
-        budgetMax:(document.getElementById('budget-max')||{}).value||'3000'
-      }).then(function(){ setSyncStatus('online','🟢 Live'); })
-        .catch(function(e){ setSyncStatus('offline','⚠️ Offline'); });
-    } catch(e){ console.error('save err',e); }
-  }, 800);
-}
-
-// initFirebase is called via setTimeout AFTER init render — guarantees SDK is loaded
-function initFirebase() {
-  try {
-    if(typeof firebase === 'undefined'){ setSyncStatus('offline','SDK unavailable'); return; }
-    if(!firebase.apps || !firebase.apps.length){
-      firebase.initializeApp({
-        apiKey:"AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
-        authDomain:"silent-bicycle-92418-671fb.firebaseapp.com",
-        databaseURL:"https://silent-bicycle-92418-671fb-default-rtdb.firebaseio.com",
-        projectId:"silent-bicycle-92418-671fb",
-        storageBucket:"silent-bicycle-92418-671fb.firebasestorage.app",
-        messagingSenderId:"171163448108",
-        appId:"1:171163448108:web:1c3661dbfb514af2c4b289"
-      });
-    }
-    window._tripRef = firebase.database().ref('tripData');
-    _fbReady = true;
-    setSyncStatus('syncing','Connecting…');
-    window._tripRef.on('value', function(snap){
-      try {
-        var val = snap.val();
-        if(!val){ setSyncStatus('online','🟢 Ready'); return; }
-        if(val.expenses && Array.isArray(val.expenses)) expenses = val.expenses;
-        if(val.catTotals) catTotals = val.catTotals;
-        if(val.budgetMax){ var bm=document.getElementById('budget-max'); if(bm) bm.value=val.budgetMax; }
-        if(val.customEmerg && Array.isArray(val.customEmerg)) customEmerg = val.customEmerg;
-        if(val.guideNotes){ Object.keys(val.guideNotes).forEach(function(id){
-          var g=guideData.find(function(x){return String(x.id)===String(id);});
-          if(g){g.notes=val.guideNotes[id].notes||'';g.img=val.guideNotes[id].img||null;}
-        });}
-        if(val.guideCustom && Array.isArray(val.guideCustom)){ val.guideCustom.forEach(function(g){
-          if(!guideData.find(function(x){return String(x.id)===String(g.id);})) guideData.push(g);
-        });}
-        if(val.flightEdits){ Object.keys(val.flightEdits).forEach(function(fid){
-          var f=flights.find(function(x){return x.id===fid;});
-          if(f){var e=val.flightEdits[fid];if(e.num)f.num=e.num;if(e.dep)f.dep=e.dep;if(e.arr)f.arr=e.arr;if(e.terminal)f.terminal=e.terminal;if(e.gate)f.gate=e.gate;if(e.cabin)f.cabin=e.cabin;}
-        });}
-        if(val.accomEdits){ Object.keys(val.accomEdits).forEach(function(aid){
-          var a=accoms.find(function(x){return x.id===aid;});
-          if(a){var e=val.accomEdits[aid];if(e.name)a.name=e.name;if(e.addr)a.addr=e.addr;if(e.nearTube)a.nearTube=e.nearTube;if(e.checkin)a.checkin=e.checkin;if(e.wifi)a.wifi=e.wifi;}
-        });}
-        if(val.itinEdits){ Object.keys(val.itinEdits).forEach(function(di){
-          var idx=parseInt(di);
-          if(itinerary[idx]&&val.itinEdits[di]&&Array.isArray(val.itinEdits[di].activities))
-            itinerary[idx].activities=val.itinEdits[di].activities;
-        });}
-        // Only re-render sections affected by cloud data
-        renderFlights(); renderAccoms(); renderEmerg();
-        renderExpenses(); buildCatGrid(); refreshBudget();
-        renderGuide(document.querySelector('.guide-search')?document.querySelector('.guide-search').value:'');
-        setSyncStatus('online','🟢 Live');
-      } catch(e){ console.error('listener err',e); setSyncStatus('offline','⚠️ Error'); }
-    }, function(err){ setSyncStatus('offline','⚠️ Offline'); console.error(err); });
-  } catch(e){ setSyncStatus('offline','Firebase error'); console.error(e); }
-}
-
+function setSyncStatus(s,m){var d=document.getElementById("sync-dot");var l=document.getElementById("sync-label");if(d)d.className="sync-dot"+(s==="syncing"?" syncing":s==="offline"?" offline":"");if(l)l.textContent=m||"";}
 
 var flights = [
   {id:'f1',label:'Outbound — Leg 1',num:'MU726',route:'Hong Kong (HKG) → Shanghai Pudong (PVG)',dep:'13 May · 07:30',arr:'13 May · 10:15',terminal:'TBC',gate:'TBC',cabin:'Economy B',bg:'#1a2744'},
@@ -899,7 +805,7 @@ function renderEmerg(){
   });
   el.innerHTML = html;
 }
-function deleteEmerg(i){ customEmerg.splice(i,1); renderEmerg(); firebaseSave(); }
+function deleteEmerg(i){ customEmerg.splice(i,1); renderEmerg(); if(window._fbSave) window._fbSave(); }
 
 // ─── WEATHER ────────────────────────────────────────────────────────────────
 var W_ICONS = {
@@ -1450,7 +1356,7 @@ function saveNewGuide(){
     notes:'', img:null
   };
   guideData.push(newG);
-  firebaseSave();
+  if(window._fbSave) window._fbSave();
   renderGuide(document.querySelector('.guide-search').value);
   document.getElementById('modal-overlay').style.display='none';
 }
@@ -1464,7 +1370,7 @@ function saveEditGuide(id){
   g.summaryZH=document.getElementById('eg-summaryZH').value;
   renderGuide(document.querySelector('.guide-search')?document.querySelector('.guide-search').value:'');
   document.getElementById('modal-overlay').style.display='none';
-  firebaseSave();
+  if(window._fbSave) window._fbSave();
 }
 
 
@@ -1498,16 +1404,149 @@ _fns.forEach(function(name){
   if(typeof orig==='function'){
     window[name] = function(){
       var r = orig.apply(this, arguments);
-      firebaseSave();
+      if(window._fbSave) window._fbSave();
       return r;
     };
   }
 });
 var _origAddExp2 = addExp;
-addExp = function(){ _origAddExp2(); firebaseSave(); };
+addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 
-// ─── START FIREBASE (deferred — UI already rendered above) ─────────────────────
-setTimeout(initFirebase, 50);
+// Firebase sync handled by ES module below
 </script>
+
+<!-- Firebase ES Module — runs after main script, UI already rendered -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
+  authDomain: "silent-bicycle-92418-671fb.firebaseapp.com",
+  projectId: "silent-bicycle-92418-671fb",
+  databaseURL: "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app/",
+  storageBucket: "silent-bicycle-92418-671fb.firebasestorage.app",
+  messagingSenderId: "171163448108",
+  appId: "1:171163448108:web:1c3661dbfb514af2c4b289"
+};
+
+try {
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  const tripRef = ref(db, 'tripData');
+
+  setSyncStatus('syncing', 'Connecting…');
+
+  // Save function — exposed to main script via window._fbSave
+  let saveTimer = null;
+  window._fbSave = function() {
+    clearTimeout(saveTimer);
+    setSyncStatus('syncing', 'Saving…');
+    saveTimer = setTimeout(function() {
+      const gn = {};
+      (window.guideData||[]).forEach(g => { gn[String(g.id)] = {notes: g.notes||'', img: g.img||null}; });
+      const ie = {};
+      (window.itinerary||[]).forEach((d,i) => { ie[i] = {activities: d.activities}; });
+      const fe = {};
+      (window.flights||[]).forEach(f => { fe[f.id] = {num:f.num, dep:f.dep, arr:f.arr, terminal:f.terminal, gate:f.gate, cabin:f.cabin}; });
+      const ae = {};
+      (window.accoms||[]).forEach(a => { ae[a.id] = {name:a.name, addr:a.addr, nearTube:a.nearTube, checkin:a.checkin, wifi:a.wifi}; });
+      set(tripRef, {
+        expenses:    window.expenses   || [],
+        catTotals:   window.catTotals  || {},
+        customEmerg: window.customEmerg|| [],
+        budgetMax:   document.getElementById('budget-max')?.value || '3000',
+        guideNotes:  gn,
+        guideCustom: (window.guideData||[]).filter(g => String(g.id).startsWith('custom-')),
+        itinEdits:   ie,
+        flightEdits: fe,
+        accomEdits:  ae
+      }).then(() => setSyncStatus('online','🟢 Live'))
+        .catch(e => { setSyncStatus('offline','⚠️ Offline'); console.error(e); });
+    }, 800);
+  };
+
+  // Live listener — merges cloud edits ON TOP of local defaults (never replaces them)
+  onValue(tripRef, (snap) => {
+    const val = snap.val();
+    if (!val) { setSyncStatus('online', '🟢 Ready'); return; }
+
+    if (Array.isArray(val.expenses))       window.expenses    = val.expenses;
+    if (val.catTotals)                     window.catTotals   = val.catTotals;
+    if (Array.isArray(val.customEmerg))    window.customEmerg = val.customEmerg;
+    if (val.budgetMax) { const bm = document.getElementById('budget-max'); if(bm) bm.value = val.budgetMax; }
+
+    // Guide notes — merge into existing guideData
+    if (val.guideNotes) {
+      Object.keys(val.guideNotes).forEach(id => {
+        const g = (window.guideData||[]).find(x => String(x.id) === String(id));
+        if (g) { g.notes = val.guideNotes[id].notes||''; g.img = val.guideNotes[id].img||null; }
+      });
+    }
+    // Custom guide cards
+    if (Array.isArray(val.guideCustom)) {
+      val.guideCustom.forEach(g => {
+        if (!(window.guideData||[]).find(x => String(x.id) === String(g.id))) window.guideData.push(g);
+      });
+    }
+    // Flight edits — only overwrite if field is non-empty
+    if (val.flightEdits) {
+      Object.keys(val.flightEdits).forEach(fid => {
+        const f = (window.flights||[]).find(x => x.id === fid);
+        if (!f) return;
+        const e = val.flightEdits[fid];
+        if (e.num)      f.num      = e.num;
+        if (e.dep)      f.dep      = e.dep;
+        if (e.arr)      f.arr      = e.arr;
+        if (e.terminal) f.terminal = e.terminal;
+        if (e.gate)     f.gate     = e.gate;
+        if (e.cabin)    f.cabin    = e.cabin;
+      });
+    }
+    // Accom edits
+    if (val.accomEdits) {
+      Object.keys(val.accomEdits).forEach(aid => {
+        const a = (window.accoms||[]).find(x => x.id === aid);
+        if (!a) return;
+        const e = val.accomEdits[aid];
+        if (e.name)     a.name     = e.name;
+        if (e.addr)     a.addr     = e.addr;
+        if (e.nearTube) a.nearTube = e.nearTube;
+        if (e.checkin)  a.checkin  = e.checkin;
+        if (e.wifi)     a.wifi     = e.wifi;
+      });
+    }
+    // Itinerary edits
+    if (val.itinEdits) {
+      Object.keys(val.itinEdits).forEach(di => {
+        const idx = parseInt(di);
+        if (window.itinerary[idx] && Array.isArray(val.itinEdits[di]?.activities))
+          window.itinerary[idx].activities = val.itinEdits[di].activities;
+      });
+    }
+
+    // Selective re-render — only sections affected by cloud data
+    if (typeof renderFlights  === 'function') renderFlights();
+    if (typeof renderAccoms   === 'function') renderAccoms();
+    if (typeof renderEmerg    === 'function') renderEmerg();
+    if (typeof renderExpenses === 'function') renderExpenses();
+    if (typeof buildCatGrid   === 'function') buildCatGrid();
+    if (typeof refreshBudget  === 'function') refreshBudget();
+    if (typeof renderGuide    === 'function') {
+      const qs = document.querySelector('.guide-search');
+      renderGuide(qs ? qs.value : '');
+    }
+    setSyncStatus('online', '🟢 Live');
+  }, (err) => {
+    setSyncStatus('offline', '⚠️ Offline');
+    console.error('Firebase error:', err);
+  });
+
+} catch(e) {
+  setSyncStatus('offline', '⚠️ Firebase error');
+  console.error('Firebase init error:', e);
+}
+</script>
+
 </body>
 </html>
