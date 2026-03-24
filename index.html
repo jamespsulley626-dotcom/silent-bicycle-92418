@@ -347,7 +347,6 @@ body{display:flex;flex-direction:column;min-height:100vh;}
 
 <script>
 function setSyncStatus(s,m){var d=document.getElementById("sync-dot");var l=document.getElementById("sync-label");if(d)d.className="sync-dot"+(s==="syncing"?" syncing":s==="offline"?" offline":"");if(l)l.textContent=m||"";}
-window.setSyncStatus=setSyncStatus;
 
 var flights = [
   {id:'f1',label:'Outbound — Leg 1',num:'MU726',route:'Hong Kong (HKG) → Shanghai Pudong (PVG)',dep:'13 May · 07:30',arr:'13 May · 10:15',terminal:'TBC',gate:'TBC',cabin:'Economy B',bg:'#1a2744'},
@@ -366,6 +365,12 @@ var fxRate = 9.85;
 var expenses = [];
 var catTotals = {Transport:0,Food:0,Attractions:0,Shopping:0,Accommodation:0,Other:0};
 var catColors = {Transport:'#3b82f6',Food:'#f59e0b',Attractions:'#8b5cf6',Shopping:'#ec4899',Accommodation:'#10b981',Other:'#6b7280'};
+// Expose mutable data on window so Firebase module can read/write same objects
+window.expenses    = expenses;
+window.catTotals   = catTotals;
+window.customEmerg = customEmerg;
+window.reminders   = reminders;
+// itinerary, guideData, flights, accoms exposed after their declarations below
 var itinerary = [
   {date:'13 May',day:'Wed',label:'Arrival',type:'travel',activities:[
     {name:'Arrive Heathrow T3',time:'TBC',addr:'London Heathrow, TW6 1QG',cost:'Flight',note:'Take Piccadilly Line or Heathrow Express to central London. Journey ~50min/15min.'}
@@ -506,6 +511,8 @@ var itinerary = [
   ]}
 ];
 
+window.itinerary = itinerary;
+
 var guideData = [
   {id:'borough',name:'Borough Market',cat:'Market',city:'London',catColor:'#f59e0b',catBg:'#fef3c7',
    website:'https://boroughmarket.org.uk',
@@ -594,6 +601,10 @@ var guideData = [
    facts:[{l:'Location',v:'Knightsbridge, SW1'},{l:'Open',v:'Mon–Sat 10am–9pm, Sun 12–6pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'Knightsbridge'}],
    notes:'',img:null},
 ];
+
+window.guideData = guideData;
+window.flights   = flights;
+window.accoms    = accoms;
 
 var currentDayIdx = 0;
 var dragSrc = null;
@@ -1421,18 +1432,19 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// Modules are sandboxed — use window. to reach functions in main script
-const ss = (state, msg) => { if(window.setSyncStatus) window.setSyncStatus(state, msg); };
-
 const firebaseConfig = {
   apiKey: "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
   authDomain: "silent-bicycle-92418-671fb.firebaseapp.com",
   projectId: "silent-bicycle-92418-671fb",
-  databaseURL: "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app/",
+  databaseURL: "https://silent-bicycle-92418-671fb-default-rtdb.firebaseio.com",
   storageBucket: "silent-bicycle-92418-671fb.firebasestorage.app",
   messagingSenderId: "171163448108",
   appId: "1:171163448108:web:1c3661dbfb514af2c4b289"
 };
+
+// Bridge to main script (modules are sandboxed)
+const ss = (state, msg) => { if (typeof setSyncStatus === 'function') ss(state, msg); else { const d=document.getElementById('sync-dot'),l=document.getElementById('sync-label'); if(d)d.className='sync-dot'+(state==='syncing'?' syncing':state==='offline'?' offline':''); if(l)l.textContent=msg||''; } };
+const call = (fn, ...args) => { if (typeof window[fn] === 'function') window[fn](...args); };
 
 try {
   const app = initializeApp(firebaseConfig);
@@ -1445,7 +1457,7 @@ try {
   let saveTimer = null;
   window._fbSave = function() {
     clearTimeout(saveTimer);
-    ss('syncing','Saving…');
+    ss('syncing', 'Saving…');
     saveTimer = setTimeout(function() {
       const gn = {};
       (window.guideData||[]).forEach(g => { gn[String(g.id)] = {notes: g.notes||'', img: g.img||null}; });
@@ -1473,11 +1485,20 @@ try {
   // Live listener — merges cloud edits ON TOP of local defaults (never replaces them)
   onValue(tripRef, (snap) => {
     const val = snap.val();
-    if (!val) { ss('online','🟢 Ready'); return; }
+    if (!val) { ss('online', '🟢 Ready'); return; }
 
-    if (Array.isArray(val.expenses))       window.expenses    = val.expenses;
-    if (val.catTotals)                     window.catTotals   = val.catTotals;
-    if (Array.isArray(val.customEmerg))    window.customEmerg = val.customEmerg;
+    if (Array.isArray(val.expenses)) {
+      window.expenses.length = 0;
+      val.expenses.forEach(function(e){ window.expenses.push(e); });
+    }
+    if (val.catTotals) {
+      Object.keys(window.catTotals).forEach(k => { window.catTotals[k] = 0; });
+      Object.keys(val.catTotals).forEach(k => { window.catTotals[k] = val.catTotals[k]; });
+    }
+    if (Array.isArray(val.customEmerg)) {
+      window.customEmerg.length = 0;
+      val.customEmerg.forEach(function(e){ window.customEmerg.push(e); });
+    }
     if (val.budgetMax) { const bm = document.getElementById('budget-max'); if(bm) bm.value = val.budgetMax; }
 
     // Guide notes — merge into existing guideData
@@ -1529,25 +1550,27 @@ try {
       });
     }
 
-    // Selective re-render — only sections affected by cloud data
-    if (typeof window.renderFlights  === 'function') window.renderFlights();
-    if (typeof window.renderAccoms   === 'function') window.renderAccoms();
-    if (typeof window.renderEmerg    === 'function') window.renderEmerg();
-    if (typeof window.renderExpenses === 'function') window.renderExpenses();
-    if (typeof window.buildCatGrid   === 'function') window.buildCatGrid();
-    if (typeof window.refreshBudget  === 'function') window.refreshBudget();
-    if (typeof window.renderGuide    === 'function') {
+    // Re-render all sections after cloud data merges in
+    if (typeof renderFlights === 'function') renderFlights();
+    if (typeof renderAccoms === 'function') renderAccoms();
+    if (typeof renderEmerg === 'function') renderEmerg();
+    if (typeof buildDayScroll === 'function') buildDayScroll();
+    if (typeof renderExpenses === 'function') renderExpenses();
+    if (typeof buildCatGrid === 'function') buildCatGrid();
+    if (typeof refreshBudget === 'function') refreshBudget();
+    if (typeof renderPayerSummary === 'function') renderPayerSummary();
+    if (typeof renderGuide === 'function') {
       const qs = document.querySelector('.guide-search');
-      window.renderGuide(qs ? qs.value : '');
+      renderGuide(qs ? qs.value : '');
     }
-    ss('online','🟢 Live');
+    ss('online', '🟢 Live');
   }, (err) => {
-    ss('offline','⚠️ Offline');
+    ss('offline', '⚠️ Offline');
     console.error('Firebase error:', err);
   });
 
 } catch(e) {
-  ss('offline','⚠️ Firebase error');
+  ss('offline', '⚠️ Firebase error');
   console.error('Firebase init error:', e);
 }
 </script>
