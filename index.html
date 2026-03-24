@@ -347,6 +347,7 @@ body{display:flex;flex-direction:column;min-height:100vh;}
 
 <script>
 function setSyncStatus(s,m){var d=document.getElementById("sync-dot");var l=document.getElementById("sync-label");if(d)d.className="sync-dot"+(s==="syncing"?" syncing":s==="offline"?" offline":"");if(l)l.textContent=m||"";}
+window.setSyncStatus=setSyncStatus;
 
 var flights = [
   {id:'f1',label:'Outbound — Leg 1',num:'MU726',route:'Hong Kong (HKG) → Shanghai Pudong (PVG)',dep:'13 May · 07:30',arr:'13 May · 10:15',terminal:'TBC',gate:'TBC',cabin:'Economy B',bg:'#1a2744'},
@@ -1420,11 +1421,14 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+// Modules are sandboxed — use window. to reach functions in main script
+const ss = (state, msg) => { if(window.setSyncStatus) window.setSyncStatus(state, msg); };
+
 const firebaseConfig = {
   apiKey: "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
   authDomain: "silent-bicycle-92418-671fb.firebaseapp.com",
   projectId: "silent-bicycle-92418-671fb",
-  databaseURL: "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app/",
+  databaseURL: "https://silent-bicycle-92418-671fb-default-rtdb.firebaseio.com",
   storageBucket: "silent-bicycle-92418-671fb.firebasestorage.app",
   messagingSenderId: "171163448108",
   appId: "1:171163448108:web:1c3661dbfb514af2c4b289"
@@ -1435,13 +1439,13 @@ try {
   const db  = getDatabase(app);
   const tripRef = ref(db, 'tripData');
 
-  setSyncStatus('syncing', 'Connecting…');
+  ss('syncing', 'Connecting…');
 
   // Save function — exposed to main script via window._fbSave
   let saveTimer = null;
   window._fbSave = function() {
     clearTimeout(saveTimer);
-    setSyncStatus('syncing', 'Saving…');
+    ss('syncing','Saving…');
     saveTimer = setTimeout(function() {
       const gn = {};
       (window.guideData||[]).forEach(g => { gn[String(g.id)] = {notes: g.notes||'', img: g.img||null}; });
@@ -1461,15 +1465,15 @@ try {
         itinEdits:   ie,
         flightEdits: fe,
         accomEdits:  ae
-      }).then(() => setSyncStatus('online','🟢 Live'))
-        .catch(e => { setSyncStatus('offline','⚠️ Offline'); console.error(e); });
+      }).then(() => ss('online','🟢 Live'))
+        .catch(e => { ss('offline','⚠️ Offline'); console.error(e); });
     }, 800);
   };
 
   // Live listener — merges cloud edits ON TOP of local defaults (never replaces them)
   onValue(tripRef, (snap) => {
     const val = snap.val();
-    if (!val) { setSyncStatus('online', '🟢 Ready'); return; }
+    if (!val) { ss('online','🟢 Ready'); return; }
 
     if (Array.isArray(val.expenses))       window.expenses    = val.expenses;
     if (val.catTotals)                     window.catTotals   = val.catTotals;
@@ -1526,24 +1530,24 @@ try {
     }
 
     // Selective re-render — only sections affected by cloud data
-    if (typeof renderFlights  === 'function') renderFlights();
-    if (typeof renderAccoms   === 'function') renderAccoms();
-    if (typeof renderEmerg    === 'function') renderEmerg();
-    if (typeof renderExpenses === 'function') renderExpenses();
-    if (typeof buildCatGrid   === 'function') buildCatGrid();
-    if (typeof refreshBudget  === 'function') refreshBudget();
-    if (typeof renderGuide    === 'function') {
+    if (typeof window.renderFlights  === 'function') window.renderFlights();
+    if (typeof window.renderAccoms   === 'function') window.renderAccoms();
+    if (typeof window.renderEmerg    === 'function') window.renderEmerg();
+    if (typeof window.renderExpenses === 'function') window.renderExpenses();
+    if (typeof window.buildCatGrid   === 'function') window.buildCatGrid();
+    if (typeof window.refreshBudget  === 'function') window.refreshBudget();
+    if (typeof window.renderGuide    === 'function') {
       const qs = document.querySelector('.guide-search');
-      renderGuide(qs ? qs.value : '');
+      window.renderGuide(qs ? qs.value : '');
     }
-    setSyncStatus('online', '🟢 Live');
+    ss('online','🟢 Live');
   }, (err) => {
-    setSyncStatus('offline', '⚠️ Offline');
+    ss('offline','⚠️ Offline');
     console.error('Firebase error:', err);
   });
 
 } catch(e) {
-  setSyncStatus('offline', '⚠️ Firebase error');
+  ss('offline','⚠️ Firebase error');
   console.error('Firebase init error:', e);
 }
 </script>
