@@ -4,9 +4,6 @@
   <link rel="apple-touch-icon" href="icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-status-bar-style" content="black-translucent">
-<!DOCTYPE html>
-<html lang="en">
-<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Trip 2026</title>
@@ -353,6 +350,7 @@ body{display:flex;flex-direction:column;min-height:100vh;}
 <!-- Firebase loaded via ES module below -->
 
 <script>
+
 
 
 function setSyncStatus(s,m){var d=document.getElementById("sync-dot");var l=document.getElementById("sync-label");if(d)d.className="sync-dot"+(s==="syncing"?" syncing":s==="offline"?" offline":"");if(l)l.textContent=m||"";}
@@ -1303,14 +1301,17 @@ function openModal(mode, a, b){
   } else if(mode==='edit-guide'){
     var g=guideData.find(function(x){return x.id===a;});
     if(!g){document.getElementById('modal-overlay').style.display='none';return;}
+    var _catList=['Museum','Market','Nature','Royal','Landmark','Sports','Day Trip','Shopping','Food','Other'];
+    var _catOpts=_catList.map(function(ct){return '<option value="'+ct+'"'+(ct===g.cat?' selected':'')+'>'+ct+'</option>';}).join('');
     html='<h3>Edit: '+g.name+'</h3>';
     html+='<div class="modal-field"><label>Name</label><input id="eg-name" value="'+g.name+'"></div>';
+    html+='<div class="modal-field"><label>Category</label><select id="eg-cat">'+_catOpts+'</select></div>';
     html+='<div class="modal-field"><label>City</label><input id="eg-city" value="'+(g.city||'')+'"></div>';
     html+='<div class="modal-field"><label>Website</label><input id="eg-website" value="'+(g.website||'')+'"></div>';
     html+='<div class="modal-field"><label>Background (English)</label><textarea id="eg-summary">'+(g.summary||'')+'</textarea></div>';
     html+='<div class="modal-field"><label>背景（繁體中文）</label><textarea id="eg-summaryZH">'+(g.summaryZH||'')+'</textarea></div>';
     html+='<div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveEditGuide(\''+a+'\')">Save</button></div>';
-  } else if(mode==='add-emerg'){
+    } else if(mode==='add-emerg'){
     html='<h3>Add Emergency Contact</h3>';
     html+='<div class="modal-field"><label>Label (e.g. Your mobile)</label><input id="em-label" placeholder="Your mobile"></div>';
     html+='<div class="modal-field"><label>Number</label><input id="em-num" placeholder="+44 7xxx xxxxxx" type="tel"></div>';
@@ -1414,7 +1415,13 @@ function saveNewGuide(){
 function saveEditGuide(id){
   var g=guideData.find(function(x){return x.id===id;});
   if(!g) return;
+  var catColorMap={Museum:'#8b5cf6',Market:'#f59e0b',Nature:'#10b981',Royal:'#3b82f6',Landmark:'#3b82f6',Sports:'#ef4444','Day Trip':'#6b7280',Shopping:'#ec4899',Food:'#f59e0b',Other:'#6b7280'};
+  var catBgMap={Museum:'#ede9fe',Market:'#fef3c7',Nature:'#dcfce7',Royal:'#dbeafe',Landmark:'#dbeafe',Sports:'#fee2e2','Day Trip':'#f3f4f6',Shopping:'#fce7f3',Food:'#fef3c7',Other:'#f3f4f6'};
   g.name=document.getElementById('eg-name').value;
+  var newCat=document.getElementById('eg-cat').value;
+  g.cat=newCat;
+  g.catColor=catColorMap[newCat]||'#6b7280';
+  g.catBg=catBgMap[newCat]||'#f3f4f6';
   g.city=document.getElementById('eg-city').value;
   g.website=document.getElementById('eg-website').value;
   g.summary=document.getElementById('eg-summary').value;
@@ -1467,6 +1474,7 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 } // end if(!window._patchedFns)
 
 // Firebase sync handled by ES module below
+
 
 
 </script>
