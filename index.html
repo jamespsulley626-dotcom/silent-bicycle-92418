@@ -327,6 +327,7 @@ body{display:flex;flex-direction:column;min-height:100vh;}
     <div id="exp-list"><div style="text-align:center;padding:18px;color:var(--muted);font-size:14px">No expenses yet.</div></div>
     <div class="total-bar"><span class="total-label">Total Spent</span><span class="total-amt">£<span id="grand-total">0.00</span></span></div>
   </div>
+  <div id="payer-summary" style="display:none;margin-bottom:16px;"></div>
 </div>
 
 <!-- GUIDE TAB -->
@@ -1105,6 +1106,7 @@ var payerEmoji={'Dad':'👨','Mum':'👩','Me':'🧑','Shared':'🤝'};
 
 function renderPayerSummary(){
   var el=document.getElementById('payer-summary');
+  if(!el) return;
   if(!expenses.length){el.style.display='none';return;}
   var totals={};
   expenses.forEach(function(e){
@@ -1468,151 +1470,184 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
-  authDomain: "silent-bicycle-92418-671fb.firebaseapp.com",
-  projectId: "silent-bicycle-92418-671fb",
-  databaseURL: "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app/",
-  storageBucket: "silent-bicycle-92418-671fb.firebasestorage.app",
+const FBCFG = {
+  apiKey:            "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
+  authDomain:        "silent-bicycle-92418-671fb.firebaseapp.com",
+  databaseURL:       "https://silent-bicycle-92418-671fb-default-rtdb.firebaseio.com",
+  projectId:         "silent-bicycle-92418-671fb",
+  storageBucket:     "silent-bicycle-92418-671fb.firebasestorage.app",
   messagingSenderId: "171163448108",
-  appId: "1:171163448108:web:1c3661dbfb514af2c4b289"
+  appId:             "1:171163448108:web:1c3661dbfb514af2c4b289"
 };
 
-// Bridge to main script (modules are sandboxed)
-const ss = (state, msg) => {
-  const d = document.getElementById('sync-dot');
-  const l = document.getElementById('sync-label');
-  if (d) d.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'offline' ? ' offline' : '');
-  if (l) l.textContent = msg || '';
-};
-const call = (fn, ...args) => { if (typeof window[fn] === 'function') window[fn](...args); };
+// ── Sync status helper — directly touches DOM, no cross-script call ──────────
+function syncUI(state, msg) {
+  var dot = document.getElementById("sync-dot");
+  var lbl = document.getElementById("sync-label");
+  if (dot) dot.className = "sync-dot" + (state === "syncing" ? " syncing" : state === "offline" ? " offline" : "");
+  if (lbl) lbl.textContent = msg || "";
+}
 
 try {
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
-  const tripRef = ref(db, 'tripData');
+  const app     = initializeApp(FBCFG);
+  const db      = getDatabase(app);
+  const tripRef = ref(db, "tripData");
 
-  ss('syncing', 'Connecting…');
+  syncUI("syncing", "Connecting…");
 
-  // Save function — exposed to main script via window._fbSave
+  // ── Save to Firebase (debounced 800ms) ─────────────────────────────────────
   let saveTimer = null;
-  window._fbSave = function() {
+  window._fbSave = function () {
     clearTimeout(saveTimer);
-    ss('syncing', 'Saving…');
-    saveTimer = setTimeout(function() {
-      const gn = {};
-      (window.guideData||[]).forEach(g => { gn[String(g.id)] = {notes: g.notes||'', img: g.img||null}; });
-      const ie = {};
-      (window.itinerary||[]).forEach((d,i) => { ie[i] = {activities: d.activities}; });
-      const fe = {};
-      (window.flights||[]).forEach(f => { fe[f.id] = {num:f.num, dep:f.dep, arr:f.arr, terminal:f.terminal, gate:f.gate, cabin:f.cabin}; });
-      const ae = {};
-      (window.accoms||[]).forEach(a => { ae[a.id] = {name:a.name, addr:a.addr, nearTube:a.nearTube, checkin:a.checkin, wifi:a.wifi}; });
-      set(tripRef, {
-        expenses:    window.expenses   || [],
-        catTotals:   window.catTotals  || {},
-        customEmerg: window.customEmerg|| [],
-        budgetMax:   document.getElementById('budget-max')?.value || '3000',
-        guideNotes:  gn,
-        guideCustom: (window.guideData||[]).filter(g => String(g.id).startsWith('custom-')),
-        itinEdits:   ie,
-        flightEdits: fe,
-        accomEdits:  ae
-      }).then(() => ss('online','🟢 Live'))
-        .catch(e => { ss('offline','⚠️ Offline'); console.error(e); });
+    syncUI("syncing", "Saving…");
+    saveTimer = setTimeout(function () {
+      try {
+        // Guide notes
+        var gn = {};
+        (window.guideData || []).forEach(function (g) {
+          gn[String(g.id)] = { notes: g.notes || "", img: g.img || null };
+        });
+        // Itinerary edits
+        var ie = {};
+        (window.itinerary || []).forEach(function (d, i) {
+          ie[i] = { activities: d.activities };
+        });
+        // Flight edits
+        var fe = {};
+        (window.flights || []).forEach(function (f) {
+          fe[f.id] = { num: f.num, dep: f.dep, arr: f.arr, terminal: f.terminal, gate: f.gate, cabin: f.cabin };
+        });
+        // Accom edits
+        var ae = {};
+        (window.accoms || []).forEach(function (a) {
+          ae[a.id] = { name: a.name, addr: a.addr, nearTube: a.nearTube, checkin: a.checkin, wifi: a.wifi };
+        });
+
+        var payload = {
+          expenses:    window.expenses    || [],
+          catTotals:   window.catTotals   || {},
+          customEmerg: window.customEmerg || [],
+          budgetMax:   (document.getElementById("budget-max") || {}).value || "3000",
+          guideNotes:  gn,
+          guideCustom: (window.guideData || []).filter(function (g) { return String(g.id).indexOf("custom-") === 0; }),
+          itinEdits:   ie,
+          flightEdits: fe,
+          accomEdits:  ae
+        };
+
+        set(tripRef, payload)
+          .then(function ()  { syncUI("online", "🟢 Live"); })
+          .catch(function (e) { syncUI("offline", "⚠️ Offline"); console.error("FB save error:", e); });
+      } catch (e) {
+        console.error("_fbSave error:", e);
+      }
     }, 800);
   };
 
-  // Live listener — merges cloud edits ON TOP of local defaults (never replaces them)
-  onValue(tripRef, (snap) => {
-    const val = snap.val();
-    if (!val) { ss('online', '🟢 Ready'); return; }
+  // ── Live listener — merges cloud data on top of local defaults ──────────────
+  onValue(tripRef, function (snap) {
+    try {
+      var val = snap.val();
+      if (!val) { syncUI("online", "🟢 Ready"); return; }
 
-    if (Array.isArray(val.expenses)) {
-      window.expenses.length = 0;
-      val.expenses.forEach(function(e){ window.expenses.push(e); });
-    }
-    if (val.catTotals) {
-      Object.keys(window.catTotals).forEach(k => { window.catTotals[k] = 0; });
-      Object.keys(val.catTotals).forEach(k => { window.catTotals[k] = val.catTotals[k]; });
-    }
-    if (Array.isArray(val.customEmerg)) {
-      window.customEmerg.length = 0;
-      val.customEmerg.forEach(function(e){ window.customEmerg.push(e); });
-    }
-    if (val.budgetMax) { const bm = document.getElementById('budget-max'); if(bm) bm.value = val.budgetMax; }
+      // Expenses — mutate in place so local var reference stays valid
+      if (Array.isArray(val.expenses)) {
+        window.expenses.length = 0;
+        val.expenses.forEach(function (e) { window.expenses.push(e); });
+      }
+      // Category totals
+      if (val.catTotals && typeof val.catTotals === "object") {
+        Object.keys(window.catTotals).forEach(function (k) { window.catTotals[k] = 0; });
+        Object.keys(val.catTotals).forEach(function (k) { window.catTotals[k] = val.catTotals[k]; });
+      }
+      // Emergency contacts
+      if (Array.isArray(val.customEmerg)) {
+        window.customEmerg.length = 0;
+        val.customEmerg.forEach(function (e) { window.customEmerg.push(e); });
+      }
+      // Budget max
+      if (val.budgetMax) {
+        var bm = document.getElementById("budget-max");
+        if (bm) bm.value = val.budgetMax;
+      }
+      // Guide notes — patch into existing objects
+      if (val.guideNotes && typeof val.guideNotes === "object") {
+        Object.keys(val.guideNotes).forEach(function (id) {
+          var g = (window.guideData || []).find(function (x) { return String(x.id) === String(id); });
+          if (g) { g.notes = val.guideNotes[id].notes || ""; g.img = val.guideNotes[id].img || null; }
+        });
+      }
+      // Custom guide cards added by user
+      if (Array.isArray(val.guideCustom)) {
+        val.guideCustom.forEach(function (g) {
+          if (!(window.guideData || []).find(function (x) { return String(x.id) === String(g.id); }))
+            window.guideData.push(g);
+        });
+      }
+      // Flight edits (only non-empty fields)
+      if (val.flightEdits && typeof val.flightEdits === "object") {
+        Object.keys(val.flightEdits).forEach(function (fid) {
+          var f = (window.flights || []).find(function (x) { return x.id === fid; });
+          if (!f) return;
+          var e = val.flightEdits[fid];
+          if (e.num)      f.num      = e.num;
+          if (e.dep)      f.dep      = e.dep;
+          if (e.arr)      f.arr      = e.arr;
+          if (e.terminal) f.terminal = e.terminal;
+          if (e.gate)     f.gate     = e.gate;
+          if (e.cabin)    f.cabin    = e.cabin;
+        });
+      }
+      // Accom edits
+      if (val.accomEdits && typeof val.accomEdits === "object") {
+        Object.keys(val.accomEdits).forEach(function (aid) {
+          var a = (window.accoms || []).find(function (x) { return x.id === aid; });
+          if (!a) return;
+          var e = val.accomEdits[aid];
+          if (e.name)     a.name     = e.name;
+          if (e.addr)     a.addr     = e.addr;
+          if (e.nearTube) a.nearTube = e.nearTube;
+          if (e.checkin)  a.checkin  = e.checkin;
+          if (e.wifi)     a.wifi     = e.wifi;
+        });
+      }
+      // Itinerary activity edits
+      if (val.itinEdits && typeof val.itinEdits === "object") {
+        Object.keys(val.itinEdits).forEach(function (di) {
+          var idx = parseInt(di);
+          var day = val.itinEdits[di];
+          if (window.itinerary[idx] && day && Array.isArray(day.activities))
+            window.itinerary[idx].activities = day.activities;
+        });
+      }
 
-    // Guide notes — merge into existing guideData
-    if (val.guideNotes) {
-      Object.keys(val.guideNotes).forEach(id => {
-        const g = (window.guideData||[]).find(x => String(x.id) === String(id));
-        if (g) { g.notes = val.guideNotes[id].notes||''; g.img = val.guideNotes[id].img||null; }
-      });
-    }
-    // Custom guide cards
-    if (Array.isArray(val.guideCustom)) {
-      val.guideCustom.forEach(g => {
-        if (!(window.guideData||[]).find(x => String(x.id) === String(g.id))) window.guideData.push(g);
-      });
-    }
-    // Flight edits — only overwrite if field is non-empty
-    if (val.flightEdits) {
-      Object.keys(val.flightEdits).forEach(fid => {
-        const f = (window.flights||[]).find(x => x.id === fid);
-        if (!f) return;
-        const e = val.flightEdits[fid];
-        if (e.num)      f.num      = e.num;
-        if (e.dep)      f.dep      = e.dep;
-        if (e.arr)      f.arr      = e.arr;
-        if (e.terminal) f.terminal = e.terminal;
-        if (e.gate)     f.gate     = e.gate;
-        if (e.cabin)    f.cabin    = e.cabin;
-      });
-    }
-    // Accom edits
-    if (val.accomEdits) {
-      Object.keys(val.accomEdits).forEach(aid => {
-        const a = (window.accoms||[]).find(x => x.id === aid);
-        if (!a) return;
-        const e = val.accomEdits[aid];
-        if (e.name)     a.name     = e.name;
-        if (e.addr)     a.addr     = e.addr;
-        if (e.nearTube) a.nearTube = e.nearTube;
-        if (e.checkin)  a.checkin  = e.checkin;
-        if (e.wifi)     a.wifi     = e.wifi;
-      });
-    }
-    // Itinerary edits
-    if (val.itinEdits) {
-      Object.keys(val.itinEdits).forEach(di => {
-        const idx = parseInt(di);
-        if (window.itinerary[idx] && Array.isArray(val.itinEdits[di]?.activities))
-          window.itinerary[idx].activities = val.itinEdits[di].activities;
-      });
-    }
+      // Re-render all affected sections (each wrapped so one crash won't stop others)
+      var reRenders = [
+        function(){ if(typeof renderFlights      ==="function") renderFlights(); },
+        function(){ if(typeof renderAccoms       ==="function") renderAccoms(); },
+        function(){ if(typeof renderEmerg        ==="function") renderEmerg(); },
+        function(){ if(typeof buildDayScroll     ==="function") buildDayScroll(); },
+        function(){ if(typeof renderExpenses     ==="function") renderExpenses(); },
+        function(){ if(typeof buildCatGrid       ==="function") buildCatGrid(); },
+        function(){ if(typeof refreshBudget      ==="function") refreshBudget(); },
+        function(){ if(typeof renderPayerSummary ==="function") renderPayerSummary(); },
+        function(){ if(typeof renderGuide        ==="function"){ var qs=document.querySelector(".guide-search"); renderGuide(qs?qs.value:""); } }
+      ];
+      reRenders.forEach(function(fn){ try{ fn(); } catch(e){ console.warn("render error:", e.message); } });
 
-    // Re-render all sections after cloud data merges in
-    if (typeof renderFlights === 'function') renderFlights();
-    if (typeof renderAccoms === 'function') renderAccoms();
-    if (typeof renderEmerg === 'function') renderEmerg();
-    if (typeof buildDayScroll === 'function') buildDayScroll();
-    if (typeof renderExpenses === 'function') renderExpenses();
-    if (typeof buildCatGrid === 'function') buildCatGrid();
-    if (typeof refreshBudget === 'function') refreshBudget();
-    if (typeof renderPayerSummary === 'function') renderPayerSummary();
-    if (typeof renderGuide === 'function') {
-      const qs = document.querySelector('.guide-search');
-      renderGuide(qs ? qs.value : '');
+      syncUI("online", "🟢 Live");
+    } catch (e) {
+      console.error("onValue handler error:", e);
+      syncUI("offline", "⚠️ Error");
     }
-    ss('online', '🟢 Live');
-  }, (err) => {
-    ss('offline', '⚠️ Offline');
-    console.error('Firebase error:', err);
+  }, function (err) {
+    syncUI("offline", "⚠️ Offline");
+    console.error("Firebase listener error:", err);
   });
 
-} catch(e) {
-  ss('offline', '⚠️ Firebase error');
-  console.error('Firebase init error:', e);
+} catch (e) {
+  syncUI("offline", "⚠️ Firebase error");
+  console.error("Firebase init error:", e);
 }
 </script>
 
