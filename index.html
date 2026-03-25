@@ -349,6 +349,7 @@ body{display:flex;flex-direction:column;min-height:100vh;}
 <!-- Firebase loaded via ES module below -->
 
 <script>
+
 function setSyncStatus(s,m){var d=document.getElementById("sync-dot");var l=document.getElementById("sync-label");if(d)d.className="sync-dot"+(s==="syncing"?" syncing":s==="offline"?" offline":"");if(l)l.textContent=m||"";}
 
 var flights = [
@@ -365,9 +366,7 @@ var accoms = [
 var customEmerg = [{label:'Alva',num:'+44 07857180865'}];
 var reminders = [];
 var fxRate = 9.85;
-window.expenses = window.expenses || [];
-var expenses = window.expenses;
-console.log("Expenses linked to cloud");
+var expenses = [];
 var catTotals = {Transport:0,Food:0,Attractions:0,Shopping:0,Accommodation:0,Other:0};
 var catColors = {Transport:'#3b82f6',Food:'#f59e0b',Attractions:'#8b5cf6',Shopping:'#ec4899',Accommodation:'#10b981',Other:'#6b7280'};
 // Expose mutable data on window so Firebase module can read/write same objects
@@ -376,7 +375,7 @@ window.catTotals   = catTotals;
 window.customEmerg = customEmerg;
 window.reminders   = reminders;
 // itinerary, guideData, flights, accoms exposed after their declarations below
-window.itinerary = window.itinerary || [
+var itinerary = [
   {date:'13 May',day:'Wed',label:'Arrival',type:'travel',activities:[
     {name:'Arrive Heathrow T3',time:'TBC',addr:'London Heathrow, TW6 1QG',cost:'Flight',note:'Take Piccadilly Line or Heathrow Express to central London. Journey ~50min/15min.'}
   ]},
@@ -989,31 +988,59 @@ function deleteActivity(di,ai){
 }
 
 function bindDrag(di){
-  var els=document.querySelectorAll('.activity');
-  els.forEach(function(el){
-    el.addEventListener('dragstart',function(e){
-      dragSrc={di:parseInt(el.dataset.di),ai:parseInt(el.dataset.ai)};
-      el.classList.add('dragging');
-      e.dataTransfer.effectAllowed='move';
-    });
-    el.addEventListener('dragend',function(){el.classList.remove('dragging');});
-    el.addEventListener('dragover',function(e){e.preventDefault();el.classList.add('dragover');});
-    el.addEventListener('dragleave',function(){el.classList.remove('dragover');});
-    el.addEventListener('drop',function(e){
-      e.preventDefault();
-      el.classList.remove('dragover');
-      if(!dragSrc) return;
-      var tdi=parseInt(el.dataset.di),tai=parseInt(el.dataset.ai);
-      if(dragSrc.di===tdi && dragSrc.ai!==tai){
-        var acts=itinerary[tdi].activities;
-        var moved=acts.splice(dragSrc.ai,1)[0];
-        var ni=dragSrc.ai<tai?tai-1:tai;
-        acts.splice(ni,0,moved);
-        renderDay(tdi);
-      }
-      dragSrc=null;
-    });
-  });
+  // Use event delegation on the timeline container — avoids listener accumulation
+  var container = document.getElementById('tl-'+di);
+  if(!container) return;
+  // Remove old delegated listener if present
+  if(container._dragHandler){
+    container.removeEventListener('dragstart', container._dragHandler);
+    container.removeEventListener('dragend',   container._dragEndHandler);
+    container.removeEventListener('dragover',  container._dragOverHandler);
+    container.removeEventListener('dragleave', container._dragLeaveHandler);
+    container.removeEventListener('drop',      container._dropHandler);
+  }
+  container._dragHandler = function(e){
+    var act = e.target.closest('.activity');
+    if(!act) return;
+    dragSrc = {di:parseInt(act.dataset.di), ai:parseInt(act.dataset.ai)};
+    act.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  container._dragEndHandler = function(e){
+    var act = e.target.closest('.activity');
+    if(act) act.classList.remove('dragging');
+  };
+  container._dragOverHandler = function(e){
+    e.preventDefault();
+    var act = e.target.closest('.activity');
+    if(act) act.classList.add('dragover');
+  };
+  container._dragLeaveHandler = function(e){
+    var act = e.target.closest('.activity');
+    if(act) act.classList.remove('dragover');
+  };
+  container._dropHandler = function(e){
+    e.preventDefault();
+    var act = e.target.closest('.activity');
+    if(act) act.classList.remove('dragover');
+    if(!dragSrc || !act) return;
+    var tdi = parseInt(act.dataset.di);
+    var tai = parseInt(act.dataset.ai);
+    if(dragSrc.di === tdi && dragSrc.ai !== tai){
+      var acts = itinerary[tdi].activities;
+      var moved = acts.splice(dragSrc.ai, 1)[0];
+      var ni = dragSrc.ai < tai ? tai - 1 : tai;
+      acts.splice(ni, 0, moved);
+      renderDay(tdi);
+      if(window._fbSave) window._fbSave();
+    }
+    dragSrc = null;
+  };
+  container.addEventListener('dragstart', container._dragHandler);
+  container.addEventListener('dragend',   container._dragEndHandler);
+  container.addEventListener('dragover',  container._dragOverHandler);
+  container.addEventListener('dragleave', container._dragLeaveHandler);
+  container.addEventListener('drop',      container._dropHandler);
 }
 
 // ─── BUDGET ──────────────────────────────────────────────────────────────────
@@ -1414,7 +1441,9 @@ renderExpenses();
 buildGuideFilters();
 renderGuide('');
 
-// Patch all mutating functions to trigger Firebase save
+// Patch all mutating functions to trigger Firebase save (runs once only)
+if(!window._patchedFns){
+window._patchedFns = true;
 var _fns = ['saveAct','addAct','deleteActivity','saveAccom','applyFlightInline','delExp','saveEmerg','saveGuideNote','saveNewGuide','saveEditGuide'];
 _fns.forEach(function(name){
   var orig = window[name];
@@ -1428,8 +1457,10 @@ _fns.forEach(function(name){
 });
 var _origAddExp2 = addExp;
 addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
+} // end if(!window._patchedFns)
 
 // Firebase sync handled by ES module below
+
 </script>
 
 <!-- Firebase ES Module — runs after main script, UI already rendered -->
