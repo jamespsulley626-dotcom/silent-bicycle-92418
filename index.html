@@ -4,6 +4,9 @@
   <link rel="apple-touch-icon" href="icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-status-bar-style" content="black-translucent">
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Trip 2026</title>
@@ -350,6 +353,7 @@ body{display:flex;flex-direction:column;min-height:100vh;}
 <!-- Firebase loaded via ES module below -->
 
 <script>
+
 
 function setSyncStatus(s,m){var d=document.getElementById("sync-dot");var l=document.getElementById("sync-label");if(d)d.className="sync-dot"+(s==="syncing"?" syncing":s==="offline"?" offline":"");if(l)l.textContent=m||"";}
 
@@ -1186,9 +1190,6 @@ function renderGuideCard(g){
   var h='<div class="guide-card" id="gc-'+g.id+'">';
   if(g.img){
     h+='<img class="guide-img" src="'+g.img+'" alt="'+g.name+'">';
-  } else {
-    var emojis={Museum:'🏛',Market:'🧺',Nature:'🌿',Royal:'👑',Landmark:'🗼',Sports:'⚽','Day Trip':'🚆',Shopping:'🛍',Food:'🍽',Other:'📍'};
-    h+='<div class="guide-img-placeholder">'+(emojis[g.cat]||'📍')+'</div>';
   }
   h+='<div class="guide-body">';
   h+='<div class="guide-header"><span class="guide-name">'+g.name+'</span><span class="guide-cat-badge" style="background:'+g.catBg+';color:'+g.catColor+'">'+g.cat+'</span></div>';
@@ -1226,7 +1227,8 @@ function renderGuideCard(g){
   h+='<span class="guide-notes-label" style="margin:0">Your Notes</span>';
   h+='<button class="act-edit-btn" onclick="openModal(\'edit-guide\',\''+g.id+'\')">✏ Edit Info</button>';
   h+='</div>';
-  h+='<textarea class="guide-notes-area" placeholder="Add your notes, tips, or reminders here…" onchange="saveGuideNote(\''+g.id+'\',this.value)">'+g.notes+'</textarea>';
+  h+='<textarea class="guide-notes-area" id="gnote-'+g.id+'" placeholder="Type your notes here…" oninput="saveGuideNote(\''+g.id+'\',this.value)">'+g.notes+'</textarea>';
+  h+='<button onclick="saveGuideNote(\''+g.id+'\',document.getElementById(\'gnote-'+g.id+'\').value)" style="margin-top:8px;width:100%;padding:9px;background:var(--navy);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font-body)">💾 Save Note</button>';
   h+='<div class="guide-upload"><label><span>📷 Upload a photo or screenshot</span><input type="file" accept="image/*" onchange="uploadGuideImg(\''+g.id+'\',this)"></label>';
   if(g.img) h+='<img class="guide-uploaded-img" src="'+g.img+'" alt="uploaded">';
   h+='</div>';
@@ -1237,7 +1239,10 @@ function renderGuideCard(g){
 
 function saveGuideNote(id,val){
   var g=guideData.find(function(x){return x.id===id;});
-  if(g) g.notes=val;
+  if(g){
+    g.notes=val;
+    if(window._fbSave) window._fbSave();
+  }
 }
 
 function uploadGuideImg(id,input){
@@ -1462,6 +1467,7 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 } // end if(!window._patchedFns)
 
 // Firebase sync handled by ES module below
+
 
 </script>
 
