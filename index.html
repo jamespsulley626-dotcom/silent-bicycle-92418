@@ -1472,14 +1472,19 @@ const firebaseConfig = {
   apiKey: "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
   authDomain: "silent-bicycle-92418-671fb.firebaseapp.com",
   projectId: "silent-bicycle-92418-671fb",
-  databaseURL: "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app/",
+  databaseURL: "https://silent-bicycle-92418-671fb-default-rtdb.firebaseio.com",
   storageBucket: "silent-bicycle-92418-671fb.firebasestorage.app",
   messagingSenderId: "171163448108",
   appId: "1:171163448108:web:1c3661dbfb514af2c4b289"
 };
 
 // Bridge to main script (modules are sandboxed)
-const ss = (state, msg) => { if (typeof setSyncStatus === 'function') ss(state, msg); else { const d=document.getElementById('sync-dot'),l=document.getElementById('sync-label'); if(d)d.className='sync-dot'+(state==='syncing'?' syncing':state==='offline'?' offline':''); if(l)l.textContent=msg||''; } };
+const ss = (state, msg) => {
+  const d = document.getElementById('sync-dot');
+  const l = document.getElementById('sync-label');
+  if (d) d.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'offline' ? ' offline' : '');
+  if (l) l.textContent = msg || '';
+};
 const call = (fn, ...args) => { if (typeof window[fn] === 'function') window[fn](...args); };
 
 try {
