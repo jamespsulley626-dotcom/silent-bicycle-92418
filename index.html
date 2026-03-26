@@ -366,6 +366,10 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
 
 
 
+
+
+
+
 function setSyncStatus(s,m){var d=document.getElementById("sync-dot");var l=document.getElementById("sync-label");if(d)d.className="sync-dot"+(s==="syncing"?" syncing":s==="offline"?" offline":"");if(l)l.textContent=m||"";}
 
 var flights = [
@@ -455,46 +459,79 @@ var itinerary = [
   ]},
   {date:'26 May',day:'Tue',label:'Free Day',type:'rest',activities:[]},
   {date:'27 May',day:'Wed',label:'Free Day',type:'rest',activities:[]},
-  {date:'28 May',day:'Thu',label:'Free Day',type:'rest',activities:[]},
-  {date:'29 May',day:'Fri',label:'Free Day',type:'rest',activities:[]},
-  {date:'30 May',day:'Sat',label:'Free Day',type:'rest',activities:[]},
-  {date:'31 May',day:'Sun',label:'Free Day',type:'rest',activities:[]},
-  {date:'1 Jun',day:'Mon',label:'Rest Day',type:'rest',activities:[
-    {name:'Rest at home',time:'All day',addr:'Home',cost:'Free',note:'Rest before Paris trip.'}
+  {date:'28 May',day:'Thu',label:'Eurostar to Paris',type:'paris',activities:[
+    {name:'Eurostar depart London St Pancras',time:'6:00am',addr:'St Pancras International, London N1C 4QP',cost:'Booked',note:'Depart 06:00. Arrive Paris Gare du Nord 09:30 (Paris time). Allow time to clear passport control.'},
+    {name:'Check in & freshen up',time:'10:30am',addr:'Paris Accommodation',cost:'Free',note:'Drop bags or check in. Hotel may hold luggage if room not ready.'},
+    {name:'Late brunch — Cafe Louise',time:'12:00pm',addr:'155 Boulevard Saint-Germain, 75006 Paris',cost:'Pass included',note:'Croissant, juice, pancakes. Use Paris Pass — activate today on first use.'},
+    {name:'Big Bus Red Route — full orientation loop',time:'2:00pm',addr:'Stop 1: 11 Avenue de l\'Opera, 75001 Paris',cost:'Pass included',note:'Do NOT hop off — sit on top deck and see all of Paris. Full circuit = 2hrs 15min. Commentary in 11 languages.'},
+    {name:'French Apero — Saint-Germain',time:'5:00pm',addr:'155 Boulevard Saint-Germain, 75006 Paris',cost:'Pass included',note:'⚠️ Pass offer Mon–Fri 14:30–18:00 ONLY. Thursday qualifies. Arrive by 17:00 to enjoy before 18:00 cutoff.'},
+    {name:'Dinner — Croque Monsieur & Champagne by the Seine',time:'7:30pm',addr:'1 Place du Chatelet, 75001 Paris',cost:'Pass included',note:'Croque monsieur/madame + fries + kir royale Champagne cocktail. Easy first night by the river.'}
   ]},
-  {date:'2 Jun',day:'Tue',label:'Rest Day',type:'rest',activities:[
-    {name:'Packing & prep',time:'All day',addr:'Home',cost:'Free',note:'Pack for Paris, confirm all bookings.'}
+  {date:'29 May',day:'Fri',label:'Eiffel Tower + River Cruise',type:'paris',activities:[
+    {name:'French Wine Tasting — Les Caves du Louvre',time:'10:00am',addr:'52 Rue de l\'Arbre Sec, 75001 Paris',cost:'Pass included',note:'⚠️ ONLY open Mon–Fri 10:00–13:00. Historic 18th-century royal wine cellars. 3 French wines with sommelier. No reservation — arrive promptly at 10:00.'},
+    {name:'Eiffel Tower 2nd Floor Guided Climb',time:'11:30am',addr:'Allee des Refuzniks, 75007 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK 4–6 weeks ahead — sells out fast. Guided stair climb ~700 steps to 2nd floor. Evening dusk slot also recommended.'},
+    {name:'Lunch — Baked Camembert & Wine',time:'1:30pm',addr:'17 Avenue de la Motte-Picquet, 75007 Paris',cost:'Pass included',note:'5-min walk from Eiffel Tower. Warm Camembert + glass of wine. Leisurely post-climb lunch.'},
+    {name:'Bateaux Parisiens Seine River Cruise',time:'3:30pm',addr:'Port de la Bourdonnais, 75007 Paris',cost:'Pass included',note:'1-hour audio cruise past Notre-Dame, Louvre, Orsay, bridges. Show pass at ticket desk before boarding.'},
+    {name:'Musee d\'Orsay',time:'5:30pm',addr:'1 Rue de la Legion d\'Honneur, 75007 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK timed entry 1–2 weeks ahead. Open Fridays until 21:45 — use late slot to avoid day crowds. Impressionist masterpieces.'},
+    {name:'Dinner — Escargots & Onion Soup',time:'8:00pm',addr:'42 Place du Marche Saint-Honore, 75001 Paris',cost:'Pass included',note:'Classic French tasting dinner. Escargots or French onion soup + glass of wine.'}
   ]},
-  {date:'3 Jun',day:'Wed',label:'Pre-Paris',type:'rest',activities:[
-    {name:'Final prep',time:'Morning',addr:'Home',cost:'Free',note:'Check Paris itinerary, pack bags.'},
-    {name:'Farewell London afternoon tea',time:'3:00pm',addr:'Nearby tearoom',cost:'~£30/person',note:'A special treat before Paris!'}
+  {date:'30 May',day:'Sat',label:'Ile de la Cite + Cheese Tasting',type:'paris',activities:[
+    {name:'Sainte-Chapelle',time:'9:30am',addr:'10 Boulevard du Palais, 75001 Paris',cost:'Pass included',note:'1,113 stained-glass windows. Morning light through the glass is extraordinary. Arrive early before crowds.'},
+    {name:'Notre-Dame exterior & Archaeological Crypt',time:'10:30am',addr:'7 Parvis Notre-Dame, 75004 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK 1–2 weeks ahead. Walk exterior of restored cathedral + underground Gallo-Roman ruins. Same island as Sainte-Chapelle — no travel needed.'},
+    {name:'Lunch — Croque Monsieur by the Seine',time:'1:00pm',addr:'1 Place du Chatelet, 75001 Paris',cost:'Pass included',note:'5-min walk from Notre-Dame. Croque monsieur + fries + kir royale. Friday lunch treat.'},
+    {name:'Cheese Tasting at O Chateau',time:'3:00pm',addr:'68 Rue Jean Jacques Rousseau, 75001 Paris',cost:'Pass included',note:'5 French cheeses + 1 glass of wine. Walk-in with pass. Expert-guided tasting.'},
+    {name:'Gin Distillery — Arbre Sec',time:'6:00pm',addr:'52 Rue de l\'Arbre Sec, 75001 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK via pass app. Same street as Les Caves du Louvre. Premium gin tasting + micro-distillery tour.'}
   ]},
-  {date:'4 Jun',day:'Thu',label:'Paris Day 1',type:'paris',activities:[
+  {date:'31 May',day:'Sun',label:'Montmartre + Champagne',type:'paris',activities:[
+    {name:'Perfume Mini Workshop — Fragonard',time:'10:00am',addr:'3-5 Square de l\'Opera-Louis Jouvet, 75009 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK 2–3 weeks ahead. Saturday 10:00 English slot. Max 10 guests. Guided museum + 20-min perfume workshop. Take home 12ml eau de toilette.'},
+    {name:'Opera National — self-guided tour',time:'11:30am',addr:'Place de l\'Opera, 75009 Paris',cost:'Pass included',note:'Next door to Fragonard. Check Opera Garnier website that Sat 31 May is not a performance day before visiting.'},
+    {name:'Big Bus Blue Route to Montmartre',time:'1:00pm',addr:'Stop 1: 11 Avenue de l\'Opera (10-min walk from Fragonard)',cost:'Pass included',note:'Blue Route branches to Montmartre. Sacre-Coeur stop is HOP-OFF ONLY — cannot re-board there.'},
+    {name:'Petit Train de Montmartre',time:'1:30pm',addr:'Place du Tertre, Montmartre, 75018 Paris',cost:'Pass included',note:'Mini train through cobbled streets. Saves legs on the hill. Every 30 minutes.'},
+    {name:'Champagne Gourmand at Montmartre',time:'5:00pm',addr:'4 Place du Tertre, 75018 Paris',cost:'Pass included',note:'⚠️ Pass offer ONLY 14:00–19:00 daily. Glass of Champagne + French pastries. Views of Sacre-Coeur from the terrace.'},
+    {name:'Dinner — Oysters & Sparkling Wine',time:'7:30pm',addr:'Les Turbines, Paris (check pass app for address)',cost:'Pass included',note:'Oysters or salmon + sparkling wine. Elegant Saturday evening dinner.'}
+  ]},
+  {date:'1 Jun',day:'Mon',label:'Versailles Full Day',type:'paris',activities:[
+    {name:'Depart for Versailles — RER C',time:'8:30am',addr:'RER C — alight Versailles Chateau Rive Gauche',cost:'RER ticket ~€4 (not in pass)',note:'Arrive by 09:00 to beat crowds. Buy RER C ticket separately or use Navigo card.'},
+    {name:'Palace of Versailles — full day',time:'9:00am',addr:'Place d\'Armes, 78000 Versailles',cost:'Pass included',note:'⚠️ PRE-BOOK 2–3 weeks ahead. Hall of Mirrors + King\'s Apartments + Marie Antoinette\'s Petit Trianon + fountain gardens. Bring water + snacks. Comfortable shoes essential.'},
+    {name:'Return to Paris',time:'6:30pm',addr:'Versailles Chateau Rive Gauche → RER C Paris',cost:'RER ticket ~€4',note:'RER C back to central Paris.'},
+    {name:'Light dinner after Versailles',time:'7:30pm',addr:'16 Rue Marbeuf, 75008 Paris (Bistro Marbeuf)',cost:'Pass included',note:'French sweet crepes. Keep it easy after a long day. Near hotel or any local brasserie.'}
+  ]},
+  {date:'2 Jun',day:'Tue',label:'Louvre + Arc de Triomphe + Farewell',type:'paris',activities:[
+    {name:'Louvre Museum — Guided Tour',time:'10:00am',addr:'Rue de Rivoli, 75001 Paris (entrance via Pyramid)',cost:'Pass included',note:'⚠️ PRE-BOOK 3–4 weeks ahead. 2–2.5 hour guided tour. Must-sees: Mona Lisa, Venus de Milo, Winged Victory. Monday is open (closed Tuesdays).'},
+    {name:'Arc de Triomphe — Rooftop',time:'1:30pm',addr:'Place Charles de Gaulle, 75008 Paris',cost:'Pass included',note:'284 steps to rooftop. 12 avenues visible from the top. Use underground passage to access — do NOT cross the roundabout.'},
+    {name:'French Sweet Crepes — Bistro Marbeuf',time:'3:30pm',addr:'16 Rue Marbeuf, 75008 Paris',cost:'Pass included',note:'10-min walk from Arc de Triomphe. Classic French crepes near Champs-Elysees.'},
+    {name:'Farewell dinner — Charcuterie & Wine',time:'5:30pm',addr:'4 Rue Drouot, 75009 Paris (Club Cochon)',cost:'Pass included',note:'Charcuterie board + glass of wine. Monday is open (closed Sundays only). Final Paris dinner — savour it!'},
+    {name:'Eurostar depart Paris Gare du Nord',time:'7:11pm',addr:'Gare du Nord, Paris 75010',cost:'Booked',note:'⚠️ Depart 19:11. Arrive London St Pancras 20:30. Allow 45 min to reach Gare du Nord before departure. Pack and check out of hotel earlier in the day.'}
+  ]},
+    {date:'3 Jun',day:'Wed',label:'Back in London',type:'rest',activities:[
+    {name:'Rest & recover',time:'All day',addr:'Home',cost:'Free',note:'Rest after Paris trip. Arrived last night from Eurostar.'}
+  ]},
+  {date:'4 Jun',day:'Thu',label:'Free Day',type:'rest',activities:[
     {name:'Travel to Paris',time:'TBC',addr:'St Pancras / Heathrow',cost:'TBC',note:'Eurostar from St Pancras ~2.5hrs. Flight from Heathrow ~1.5hrs.'},
     {name:'Check in & settle',time:'Afternoon',addr:'Paris Accommodation',cost:'Free',note:'Rest on arrival day.'},
     {name:'Brasserie dinner',time:'7:00pm',addr:'Near hotel',cost:'~€30/person',note:'First Paris meal — find a classic brasserie!'}
   ]},
-  {date:'5 Jun',day:'Fri',label:'Paris Day 2',type:'paris',activities:[
+  {date:'5 Jun',day:'Fri',label:'Free Day',type:'rest',activities:[
     {name:'Eiffel Tower',time:'9:30am',addr:'Champ de Mars, 75007 Paris',cost:'~€30/adult',note:'⚠️ Pre-book at toureiffel.paris. Early arrival avoids queues.'},
     {name:'Trocadéro viewpoint',time:'12:00pm',addr:'Place du Trocadéro, 75016',cost:'Free',note:'Best photo spot for the Tower.'},
     {name:'Rue Cler lunch',time:'1:00pm',addr:'Rue Cler, 75007 Paris',cost:'~€20/person',note:'Charming market street.'}
   ]},
-  {date:'6 Jun',day:'Sat',label:'Paris Day 3',type:'paris',activities:[
+  {date:'6 Jun',day:'Sat',label:'Free Day',type:'rest',activities:[
     {name:'Louvre Museum',time:'9:00am',addr:'Rue de Rivoli, 75001 Paris',cost:'€22/adult',note:'⚠️ Pre-book timed entry. Mona Lisa, Venus de Milo. Pick 3–4 sections only.'},
     {name:'Tuileries Garden café',time:'1:00pm',addr:'Jardin des Tuileries, 75001',cost:'~€15/person',note:''},
     {name:'Montmartre & Sacré-Cœur',time:'4:00pm',addr:'Place du Tertre, 75018',cost:'Free',note:'Take the funicular up the hill if tired.'}
   ]},
-  {date:'7 Jun',day:'Sun',label:'Paris Day 4',type:'paris',activities:[
-    {name:'Palace of Versailles',time:'10:00am',addr:"Place d'Armes, 78000 Versailles",cost:'€20/adult',note:'⚠️ Pre-book. Train ~40min. Grand palace and gardens.'},
+  {date:'7 Jun',day:'Sun',label:'Free Day',type:'rest',activities:[
+    {name:'Palace of Versailles',time:'10:00am',addr:"Place d\'Armes, 78000 Versailles",cost:'€20/adult',note:'⚠️ Pre-book. Train ~40min. Grand palace and gardens.'},
     {name:'Versailles gardens',time:'1:00pm',addr:'Gardens of Versailles',cost:'Included',note:'Sit by the fountains, walk at your own pace.'}
   ]},
-  {date:'8 Jun',day:'Mon',label:'Paris Day 5',type:'paris',activities:[
+  {date:'8 Jun',day:'Mon',label:'Free Day',type:'rest',activities:[
     {name:'Le Marais walk',time:'10:30am',addr:'Le Marais, 75004 Paris',cost:'Free',note:'Charming old district, Jewish quarter, lovely cafés.'},
     {name:'Final Paris lunch',time:'12:30pm',addr:'Le Marais bistro',cost:'~€25/person',note:'Make it special — last Paris meal!'},
     {name:'Souvenirs & packing',time:'3:00pm',addr:'Near hotel',cost:'As needed',note:''}
   ]},
-  {date:'9 Jun',day:'Tue',label:'Return to London',type:'travel',activities:[
-    {name:'Return travel to London',time:'TBC',addr:'Paris Gare du Nord / CDG',cost:'TBC',note:'Eurostar or flight back. Return to London home.'}
+  {date:'9 Jun',day:'Tue',label:'Free Day',type:'rest',activities:[
+    {name:'Free day in London',time:'TBC',addr:'Paris Gare du Nord / CDG',cost:'TBC',note:'Eurostar or flight back. Return to London home.'}
   ]},
   {date:'10 Jun',day:'Wed',label:'Rest Day',type:'rest',activities:[
     {name:'Rest after Paris',time:'All day',addr:'Home',cost:'Free',note:'Recovery day.'}
@@ -602,6 +639,80 @@ var guideData = [
    summaryZH:'哈羅德百貨創立於1849年，是全球最著名的百貨公司。七層樓的面積達100萬平方呎。即使只是逛逛不消費，壯觀的埃及廳美食廣場及華麗的裝潢本身已值得一看。',
    facts:[{l:'Location',v:'Knightsbridge, SW1'},{l:'Open',v:'Mon–Sat 10am–9pm, Sun 12–6pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'Knightsbridge'}],
    notes:'',img:null},
+  // ── Paris Attractions ─────────────────────────────────────────────────────
+  {id:'eiffel-climb',name:'Eiffel Tower',cat:'Landmark',city:'Paris',catColor:'#3b82f6',catBg:'#dbeafe',
+   website:'https://www.toureiffel.paris/en',
+   summary:'Built in 1889 for the World\'s Fair by Gustave Eiffel, the tower stands 330 metres tall. The guided climb to the 2nd floor covers ~700 steps and is included with the Paris Pass. Book the evening dusk slot for the most spectacular views over Paris. Pre-book 4–6 weeks ahead — this is the first thing to book.',
+   summaryZH:'艾菲爾鐵塔建於1889年世界博覽會，高330米。導覽登塔至二樓約700級台階，包含於巴黎通票內。建議預訂黃昏時段，景色最為壯觀。須提前4至6週預訂，這是所有景點中最優先預訂的。',
+   facts:[{l:'Location',v:'Champ de Mars, 75007'},{l:'Open',v:'Daily, tours 09:30 & 13:00'},{l:'Entry',v:'Pass included'},{l:'Book',v:'4–6 weeks ahead — toureiffel.paris'}],
+   notes:'',img:null},
+  {id:'versailles-paris',name:'Palace of Versailles',cat:'Royal',city:'Versailles',catColor:'#f59e0b',catBg:'#fef3c7',
+   website:'https://en.chateauversailles.fr',
+   summary:'The Royal Château de Versailles was the seat of French political power from 1682–1789. A full day is needed: Hall of Mirrors, King\'s Apartments, Marie Antoinette\'s Petit Trianon, and the vast formal gardens. Take RER C from central Paris (~40 min). Closed Mondays. Musical Fountain Shows at weekends require a separate paid ticket not included in the pass.',
+   summaryZH:'凡爾賽宮是法國皇室1682至1789年的政治中心，需預留整天遊覽。鏡廳、御殿、瑪麗·安托瓦內特的小特里亞農宮及廣闊庭園均為必遊之處。乘坐RER C線前往，車程約40分鐘。週一休館。週末音樂噴泉表演需另購門票，不含於通票內。',
+   facts:[{l:'Location',v:'Place d\'Armes, 78000 Versailles'},{l:'Open',v:'Tue–Sun 09:00–18:30'},{l:'Closed',v:'Mondays'},{l:'Train',v:'RER C → Versailles Chateau RG'},{l:'Book',v:'2–3 weeks ahead'}],
+   notes:'',img:null},
+  {id:'louvre-paris',name:'The Louvre',cat:'Museum',city:'Paris',catColor:'#8b5cf6',catBg:'#ede9fe',
+   website:'https://www.louvre.fr/en',
+   summary:'The world\'s largest art museum. Must-sees: Mona Lisa, Venus de Milo, Winged Victory of Samothrace. A 2–2.5 hour guided tour is strongly recommended over self-guided for first-timers. Enter via the glass Pyramid. Closed Tuesdays. Pre-book timed entry 3–4 weeks ahead.',
+   summaryZH:'全球最大藝術博物館。必看：蒙娜麗莎、米洛的維納斯、薩莫色雷斯的勝利女神。強烈建議初次到訪者預約2至2.5小時導覽，而非自行參觀。由玻璃金字塔入口進入。週二休館。須提前3至4週預訂入場時段。',
+   facts:[{l:'Location',v:'Rue de Rivoli, 75001'},{l:'Open',v:'Wed–Mon 09:00–18:00 (Wed & Fri to 21:45)'},{l:'Closed',v:'Tuesdays'},{l:'Entry',v:'Pass included'},{l:'Book',v:'3–4 weeks ahead'}],
+   notes:'',img:null},
+  {id:'sainte-chapelle',name:'Sainte-Chapelle',cat:'Landmark',city:'Paris',catColor:'#3b82f6',catBg:'#dbeafe',
+   website:'https://www.sainte-chapelle.fr/en',
+   summary:'A stunning Gothic chapel on Île de la Cité, famous for its 1,113 stained-glass windows covering nearly every wall. Built in 1248 to house Christ\'s Crown of Thorns. Morning light through the windows is extraordinary — arrive early before the crowds arrive. Located on the same island as Notre-Dame, just a 5-minute walk away.',
+   summaryZH:'聖禮拜堂是巴黎西堤島上一座令人嘆為觀止的哥德式小教堂，以1,113扇彩色玻璃窗聞名，建於1248年。清晨陽光穿透玻璃窗的景象極為震撼，建議早到以避開人群。距巴黎聖母院步行僅5分鐘。',
+   facts:[{l:'Location',v:'10 Blvd du Palais, 75001'},{l:'Open',v:'Daily 09:00–19:00 (Apr–Sep)'},{l:'Entry',v:'Pass included'},{l:'Tip',v:'Morning light is best'}],
+   notes:'',img:null},
+  {id:'notre-dame',name:'Notre-Dame & Archaeological Crypt',cat:'Landmark',city:'Paris',catColor:'#3b82f6',catBg:'#dbeafe',
+   website:'https://www.notredamedeparis.fr/en/',
+   summary:'Notre-Dame Cathedral reopened in December 2024 after the 2019 fire. Walk the exterior of the magnificently restored Gothic cathedral and explore the underground Archaeological Crypt, which contains Gallo-Roman ruins dating back 2,000 years. Located on Île de la Cité. Pre-book 1–2 weeks ahead.',
+   summaryZH:'巴黎聖母院於2024年12月重新開放，距2019年火災後歷經修復。可遊覽壯觀的哥德式大教堂外觀，並探索地下考古地窖，內有已有2,000年歷史的高盧羅馬遺址。位於西堤島，須提前1至2週預訂。',
+   facts:[{l:'Location',v:'Parvis Notre-Dame, 75004'},{l:'Open',v:'Daily 10:00–18:00'},{l:'Entry',v:'Pass included'},{l:'Book',v:'1–2 weeks ahead'}],
+   notes:'',img:null},
+  {id:'musee-orsay',name:'Musée d\'Orsay',cat:'Museum',city:'Paris',catColor:'#8b5cf6',catBg:'#ede9fe',
+   website:'https://www.musee-orsay.fr/en',
+   summary:'Housed in a stunning Beaux-Arts railway station, the Orsay holds the world\'s finest collection of Impressionist and Post-Impressionist art — Monet, Renoir, Van Gogh, Degas, Cézanne. Visit on Friday evening (open until 21:45) for smaller crowds. Closed Mondays. Pre-book timed entry since March 2026.',
+   summaryZH:'奧賽博物館設於一座美麗的新藝術風格火車站內，珍藏全球最豐富的印象派及後印象派藝術品，包括莫奈、雷諾瓦、梵高、竇加及塞尚。建議選擇週五晚間參觀（開放至21:45），人流較少。週一休館，2026年3月起須預訂入場時段。',
+   facts:[{l:'Location',v:'1 Rue de la Legion d\'Honneur, 75007'},{l:'Open',v:'Tue–Sun 09:30–18:00 (Thu to 21:45)'},{l:'Closed',v:'Mondays'},{l:'Entry',v:'Pass included'},{l:'Book',v:'1–2 weeks ahead'}],
+   notes:'',img:null},
+  {id:'arc-triomphe',name:'Arc de Triomphe',cat:'Landmark',city:'Paris',catColor:'#3b82f6',catBg:'#dbeafe',
+   website:'https://www.paris-arc-de-triomphe.fr/en',
+   summary:'Napoleon\'s triumphal arch at the centre of Place Charles de Gaulle, with 12 grand avenues radiating outwards. Climb 284 steps to the rooftop terrace for panoramic views of the Champs-Élysées and all of Paris. Visit in the afternoon for golden light. Use the underground pedestrian tunnel to reach it — never cross the roundabout.',
+   summaryZH:'拿破崙的凱旋門矗立於戴高樂廣場中央，12條大道向外放射。登上284級台階至頂層露台，可俯瞰香榭麗舍大道及整個巴黎。下午前往光線最佳。必須走地下行人通道到達，切勿橫越圓形大道。',
+   facts:[{l:'Location',v:'Place Charles de Gaulle, 75008'},{l:'Open',v:'Daily 10:00–23:00 (Apr–Sep)'},{l:'Entry',v:'Pass included'},{l:'Access',v:'Underground tunnel only — no crossing the roundabout'}],
+   notes:'',img:null},
+  {id:'montmartre',name:'Montmartre & Sacré-Cœur',cat:'Landmark',city:'Paris',catColor:'#6b7280',catBg:'#f3f4f6',
+   website:'https://www.sacre-coeur-montmartre.com/english/',
+   summary:'Montmartre is Paris\'s most romantic hilltop neighbourhood, topped by the white-domed Sacré-Cœur basilica. Explore cobbled streets, artist studios at Place du Tertre, and panoramic views over the city. Take the Petit Train de Montmartre to save your legs. The Big Bus Blue Route drops you at Sacré-Cœur (hop-off only — cannot re-board there).',
+   summaryZH:'蒙馬特是巴黎最浪漫的山丘社區，山頂矗立著白色圓頂的聖心大教堂。可探索鵝卵石街道、藝術家廣場（Place du Tertre）及俯瞰全城的壯闊景色。可乘坐蒙馬特小火車節省體力。大巴士藍線可在聖心堂站下車（僅限下車，不能重新上車）。',
+   facts:[{l:'Location',v:'Montmartre, 75018'},{l:'Entry',v:'Free (Sacré-Cœur)'},{l:'Tip',v:'Take Petit Train — saves legs on the hill'},{l:'Bus',v:'Big Bus Blue Route'}],
+   notes:'',img:null},
+  {id:'fragonard',name:'Fragonard Perfume Workshop',cat:'Museum',city:'Paris',catColor:'#ec4899',catBg:'#fce7f3',
+   website:'https://www.fragonard.com/en/museum-perfume-paris',
+   summary:'A unique guided museum tour of the history of perfume followed by a 20-minute hands-on workshop where you blend your own fragrance and take home a 12ml eau de toilette. Maximum 10 guests per session. Located next to the Opéra Garnier. English slots available Mon–Sat at 10:00 and 15:00. Closed Sundays. Must pre-book 2–3 weeks ahead.',
+   summaryZH:'獨特的香水博物館導覽，結合20分鐘親手調配香水的工作坊，可帶走一瓶12ml香水。每場最多10位賓客。位於加尼葉歌劇院旁。英語場次於週一至週六10:00及15:00舉行，週日休息。須提前2至3週預訂。',
+   facts:[{l:'Location',v:'3-5 Sq de l\'Opera-Louis Jouvet, 75009'},{l:'Open',v:'Mon–Sat only, 10:00 & 15:00 slots'},{l:'Closed',v:'Sundays'},{l:'Entry',v:'Pass included'},{l:'Book',v:'2–3 weeks ahead — essential'}],
+   notes:'',img:null},
+  {id:'caves-louvre',name:'Les Caves du Louvre — Wine Tasting',cat:'Food',city:'Paris',catColor:'#f59e0b',catBg:'#fef3c7',
+   website:'https://www.cavesdulouvre.com/en',
+   summary:'A historic 18th-century royal wine cellar beneath the streets of Paris, now hosting guided wine tastings with a sommelier. Taste 3 carefully selected French wines while learning about French wine regions and culture. No reservation needed but arrive promptly. CRITICAL: only open Monday–Friday 10:00–13:00. Do not attempt to visit outside these hours.',
+   summaryZH:'巴黎街道下方的18世紀皇家酒窖，現舉辦由侍酒師主持的品酒活動。在了解法國葡萄酒產區與文化的同時，品嚐3款精選法國葡萄酒。無需預訂，但請準時到達。重要提示：僅於週一至週五10:00至13:00開放，切勿在此時段以外嘗試參觀。',
+   facts:[{l:'Location',v:'52 Rue de l\'Arbre Sec, 75001'},{l:'Open',v:'Mon–Fri 10:00–13:00 ONLY'},{l:'Closed',v:'Weekends — no exceptions'},{l:'Entry',v:'Pass included'},{l:'Book',v:'No reservation needed'}],
+   notes:'',img:null},
+  {id:'seine-cruise',name:'Bateaux Parisiens — Seine Cruise',cat:'Landmark',city:'Paris',catColor:'#10b981',catBg:'#dcfce7',
+   website:'https://www.bateauxparisiens.com/en.html',
+   summary:'A 1-hour audio-guided river cruise along the Seine, passing Notre-Dame, the Louvre, Musée d\'Orsay, and dozens of historic bridges. Commentary available in 11 languages. Afternoon light makes for the best photography. Show your Paris Pass at the main ticket desk before boarding. Departs every 30–45 minutes throughout the day.',
+   summaryZH:'沿塞納河進行的1小時語音導覽遊船，途經巴黎聖母院、羅浮宮、奧賽博物館及數十座歷史橋樑。提供11種語言解說。下午光線最適合拍照。登船前在主售票處出示巴黎通票。每30至45分鐘一班。',
+   facts:[{l:'Location',v:'Port de la Bourdonnais, 75007'},{l:'Open',v:'Daily 10:00–22:30'},{l:'Entry',v:'Pass included'},{l:'Tip',v:'Show pass at ticket desk before boarding'}],
+   notes:'',img:null},
+  {id:'big-bus-paris',name:'Big Bus Paris — Hop-On Hop-Off',cat:'Other',city:'Paris',catColor:'#6b7280',catBg:'#f3f4f6',
+   website:'https://www.bigbustours.com/en/paris/paris-bus-tours/',
+   summary:'Two routes included with the Paris Pass. Red Route: full loop past all major landmarks (2hrs 15min, recommended as an orientation ride without hopping off on Day 1). Blue Route: branches to Montmartre — Sacré-Cœur stop is hop-off only, cannot re-board there. Boards at Stop 1: 11 Avenue de l\'Opéra. Runs daily 09:45–17:30.',
+   summaryZH:'巴黎通票包含兩條路線。紅線：途經所有主要景點的完整環線（需2小時15分鐘，建議第一天作定向遊覽，不要中途下車）。藍線：分支至蒙馬特，聖心堂站為僅限下車站，不能重新上車。於第一站（歌劇院大道11號）上車，每日09:45至17:30運行。',
+   facts:[{l:'Stop 1',v:'11 Avenue de l\'Opera, 75001'},{l:'Red Route',v:'Full loop 2hr 15min'},{l:'Blue Route',v:'Montmartre branch'},{l:'Hours',v:'Daily 09:45–17:30'},{l:'Entry',v:'Pass included'}],
+   notes:'',img:null},
+
 ];
 
 window.guideData = guideData;
@@ -1157,7 +1268,7 @@ function renderExpenses(){
 
 // ─── GUIDE ───────────────────────────────────────────────────────────────────
 function buildGuideFilters(){
-  var cats=['All','London','Paris','Museum','Market','Nature','Royal','Landmark','Day Trip','Shopping','Sports'];
+  var cats=['All','London','Paris','Versailles','Museum','Market','Nature','Royal','Landmark','Day Trip','Shopping','Sports','Food','Other'];
   var html='';
   cats.forEach(function(c){
     html+='<button class="gf-btn'+(c==='All'?' active':'')+'" onclick="setGuideFilter(\''+c+'\')">'+c+'</button>';
@@ -1546,6 +1657,10 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 } // end if(!window._patchedFns)
 
 // Firebase sync handled by ES module below
+
+
+
+
 
 
 
