@@ -1600,7 +1600,7 @@ try {
         // Itinerary edits
         var ie = {};
         (window.itinerary || []).forEach(function (d, i) {
-          ie[i] = { activities: d.activities };
+          ie[i] = { activities: d.activities, label: d.label, type: d.type };
         });
         // Flight edits
         var fe = {};
@@ -1713,8 +1713,11 @@ try {
         Object.keys(val.itinEdits).forEach(function (di) {
           var idx = parseInt(di);
           var day = val.itinEdits[di];
-          if (window.itinerary[idx] && day && Array.isArray(day.activities))
-            window.itinerary[idx].activities = day.activities;
+          if (window.itinerary[idx] && day) {
+            if (Array.isArray(day.activities)) window.itinerary[idx].activities = day.activities;
+            if (day.label) window.itinerary[idx].label = day.label;
+            if (day.type)  window.itinerary[idx].type  = day.type;
+          }
         });
       }
 
