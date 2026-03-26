@@ -121,6 +121,7 @@ body{display:flex;flex-direction:column;min-height:100vh;}
 .day-big-title{font-family:var(--font-display);font-size:22px;}
 .day-sublabel{font-size:14px;color:var(--muted);margin-top:2px;}
 .pace-pill{font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;flex-shrink:0;}
+select.pace-pill{border:none;cursor:pointer;outline:none;}
 .pace-light{background:#dcfce7;color:#15803d;}
 .pace-med{background:#fef3c7;color:#b45309;}
 .pace-full{background:#dbeafe;color:#1d4ed8;}
@@ -263,6 +264,14 @@ body{display:flex;flex-direction:column;min-height:100vh;}
   </div>
   <div id="tips-content"></div>
 
+  <p class="sec-title">Packing List</p>
+  <div class="card" style="padding:16px 18px">
+    <div id="pack-list"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <input id="pack-input" type="text" placeholder="Add item (e.g. passport, charger…)" style="flex:1;padding:10px 13px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')addPackItem()">
+      <button onclick="addPackItem()" style="padding:10px 16px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font-body);">+ Add</button>
+    </div>
+  </div>
   <p class="sec-title">Emergency Contacts</p>
   <div class="emerg-card">
     <h3>🚨 Emergency Numbers</h3>
@@ -353,6 +362,10 @@ body{display:flex;flex-direction:column;min-height:100vh;}
 
 
 
+
+
+
+
 function setSyncStatus(s,m){var d=document.getElementById("sync-dot");var l=document.getElementById("sync-label");if(d)d.className="sync-dot"+(s==="syncing"?" syncing":s==="offline"?" offline":"");if(l)l.textContent=m||"";}
 
 var flights = [
@@ -440,31 +453,12 @@ var itinerary = [
   {date:'25 May',day:'Mon',label:'Rest Day',type:'rest',activities:[
     {name:'Rest at home',time:'All day',addr:'Home',cost:'Free',note:'Recovery after busy week.'}
   ]},
-  {date:'26 May',day:'Tue',label:'Suggested: Greenwich',type:'suggestion',activities:[
-    {name:'Cutty Sark',time:'10:30am',addr:'King William Walk, SE10 9HT',cost:'£18/adult',note:'Historic tea clipper. DLR to Cutty Sark.'},
-    {name:'Greenwich Market',time:'12:30pm',addr:'College Approach, SE10 9HY',cost:'Free entry',note:'Arts, crafts & street food. Open most days.'},
-    {name:'Royal Observatory',time:'2:00pm',addr:'Blackheath Ave, SE10 8XJ',cost:'£18/adult',note:'Stand on the Prime Meridian! Stunning views of London.'}
-  ]},
-  {date:'27 May',day:'Wed',label:'Suggested: V&A Museum',type:'suggestion',activities:[
-    {name:'Victoria & Albert Museum',time:'10:30am',addr:'Cromwell Rd, SW7 2RL',cost:'Free',note:'World\'s largest decorative arts museum. South Kensington Tube.'},
-    {name:'Lunch at V&A café',time:'1:00pm',addr:'V&A Restaurant, SW7',cost:'~£15/person',note:'The café interior is itself worth seeing.'}
-  ]},
-  {date:'28 May',day:'Thu',label:'Suggested: Tower of London',type:'suggestion',activities:[
-    {name:'Tower of London',time:'10:00am',addr:'Tower Hill, EC3N 4AB',cost:'£34/adult',note:'Crown Jewels, Beefeaters. Book online. Tube: Tower Hill.'},
-    {name:'Tower Bridge walk',time:'1:00pm',addr:'Tower Bridge Rd, SE1 2UP',cost:'Free (outside)',note:''}
-  ]},
-  {date:'29 May',day:'Fri',label:'Suggested: Hampton Court',type:'suggestion',activities:[
-    {name:'Hampton Court Palace',time:'10:30am',addr:'East Molesey, KT8 9AU',cost:'£30/adult',note:'Henry VIII\'s palace. Beautiful gardens. Train from Waterloo ~35min.'},
-    {name:'Palace gardens',time:'1:00pm',addr:'Hampton Court Gardens',cost:'Included',note:'Bring a picnic lunch for the gardens.'}
-  ]},
-  {date:'30 May',day:'Sat',label:'Suggested: Portobello Road',type:'suggestion',activities:[
-    {name:'Portobello Road Market',time:'10:00am',addr:'Portobello Rd, W11 2QB',cost:'Free',note:'Antiques & street food. Best Saturdays. Tube: Notting Hill Gate.'},
-    {name:'Notting Hill walk',time:'12:00pm',addr:'Notting Hill, W11',cost:'Free',note:'Colourful houses, charming streets.'}
-  ]},
-  {date:'31 May',day:'Sun',label:'Suggested: Richmond Park',type:'suggestion',activities:[
-    {name:'Richmond Park',time:'10:30am',addr:'Richmond, TW10 5HS',cost:'Free',note:'See wild deer! Gentle paths. Tube: Richmond (District Line).'},
-    {name:'Lunch in Richmond',time:'1:00pm',addr:'Richmond town centre',cost:'~£20/person',note:''}
-  ]},
+  {date:'26 May',day:'Tue',label:'Free Day',type:'rest',activities:[]},
+  {date:'27 May',day:'Wed',label:'Free Day',type:'rest',activities:[]},
+  {date:'28 May',day:'Thu',label:'Free Day',type:'rest',activities:[]},
+  {date:'29 May',day:'Fri',label:'Free Day',type:'rest',activities:[]},
+  {date:'30 May',day:'Sat',label:'Free Day',type:'rest',activities:[]},
+  {date:'31 May',day:'Sun',label:'Free Day',type:'rest',activities:[]},
   {date:'1 Jun',day:'Mon',label:'Rest Day',type:'rest',activities:[
     {name:'Rest at home',time:'All day',addr:'Home',cost:'Free',note:'Rest before Paris trip.'}
   ]},
@@ -475,26 +469,26 @@ var itinerary = [
     {name:'Final prep',time:'Morning',addr:'Home',cost:'Free',note:'Check Paris itinerary, pack bags.'},
     {name:'Farewell London afternoon tea',time:'3:00pm',addr:'Nearby tearoom',cost:'~£30/person',note:'A special treat before Paris!'}
   ]},
-  {date:'4 Jun',day:'Thu',label:'Paris — Arrive',type:'paris',activities:[
+  {date:'4 Jun',day:'Thu',label:'Paris Day 1',type:'paris',activities:[
     {name:'Travel to Paris',time:'TBC',addr:'St Pancras / Heathrow',cost:'TBC',note:'Eurostar from St Pancras ~2.5hrs. Flight from Heathrow ~1.5hrs.'},
     {name:'Check in & settle',time:'Afternoon',addr:'Paris Accommodation',cost:'Free',note:'Rest on arrival day.'},
     {name:'Brasserie dinner',time:'7:00pm',addr:'Near hotel',cost:'~€30/person',note:'First Paris meal — find a classic brasserie!'}
   ]},
-  {date:'5 Jun',day:'Fri',label:'Paris — Eiffel Tower',type:'paris',activities:[
+  {date:'5 Jun',day:'Fri',label:'Paris Day 2',type:'paris',activities:[
     {name:'Eiffel Tower',time:'9:30am',addr:'Champ de Mars, 75007 Paris',cost:'~€30/adult',note:'⚠️ Pre-book at toureiffel.paris. Early arrival avoids queues.'},
     {name:'Trocadéro viewpoint',time:'12:00pm',addr:'Place du Trocadéro, 75016',cost:'Free',note:'Best photo spot for the Tower.'},
     {name:'Rue Cler lunch',time:'1:00pm',addr:'Rue Cler, 75007 Paris',cost:'~€20/person',note:'Charming market street.'}
   ]},
-  {date:'6 Jun',day:'Sat',label:'Paris — Louvre + Montmartre',type:'paris',activities:[
+  {date:'6 Jun',day:'Sat',label:'Paris Day 3',type:'paris',activities:[
     {name:'Louvre Museum',time:'9:00am',addr:'Rue de Rivoli, 75001 Paris',cost:'€22/adult',note:'⚠️ Pre-book timed entry. Mona Lisa, Venus de Milo. Pick 3–4 sections only.'},
     {name:'Tuileries Garden café',time:'1:00pm',addr:'Jardin des Tuileries, 75001',cost:'~€15/person',note:''},
     {name:'Montmartre & Sacré-Cœur',time:'4:00pm',addr:'Place du Tertre, 75018',cost:'Free',note:'Take the funicular up the hill if tired.'}
   ]},
-  {date:'7 Jun',day:'Sun',label:'Paris — Versailles',type:'paris',activities:[
+  {date:'7 Jun',day:'Sun',label:'Paris Day 4',type:'paris',activities:[
     {name:'Palace of Versailles',time:'10:00am',addr:"Place d'Armes, 78000 Versailles",cost:'€20/adult',note:'⚠️ Pre-book. Train ~40min. Grand palace and gardens.'},
     {name:'Versailles gardens',time:'1:00pm',addr:'Gardens of Versailles',cost:'Included',note:'Sit by the fountains, walk at your own pace.'}
   ]},
-  {date:'8 Jun',day:'Mon',label:'Paris — Final Day',type:'paris',activities:[
+  {date:'8 Jun',day:'Mon',label:'Paris Day 5',type:'paris',activities:[
     {name:'Le Marais walk',time:'10:30am',addr:'Le Marais, 75004 Paris',cost:'Free',note:'Charming old district, Jewish quarter, lovely cafés.'},
     {name:'Final Paris lunch',time:'12:30pm',addr:'Le Marais bistro',cost:'~€25/person',note:'Make it special — last Paris meal!'},
     {name:'Souvenirs & packing',time:'3:00pm',addr:'Near hotel',cost:'As needed',note:''}
@@ -519,6 +513,7 @@ var itinerary = [
 ];
 
 window.itinerary = itinerary;
+window.packItems  = packItems;
 
 var guideData = [
   {id:'borough',name:'Borough Market',cat:'Market',city:'London',catColor:'#f59e0b',catBg:'#fef3c7',
@@ -944,9 +939,16 @@ function renderDay(i){
   var bg=typeBg[d.type]||'';
 
   var html='<div style="'+bg+'">';
-  if(d.type==='suggestion') html+='<div style="font-size:13px;color:#b45309;background:#fef3c7;padding:8px 12px;border-radius:9px;margin-bottom:12px"> </div>';
-  html+='<div class="day-header-row"><div><div class="day-big-title">'+d.date+' · '+d.day+'</div><div class="day-sublabel">'+d.label+'</div></div>';
-  html+='<span class="pace-pill '+(paceMap[d.type]||'pace-med')+'">'+(paceLabel[d.type]||'')+'</span></div>';
+  if(d.type==='suggestion') html+='<div style="font-size:13px;color:#b45309;background:#fef3c7;padding:8px 12px;border-radius:9px;margin-bottom:12px">💡 Suggested — feel free to swap for your own plan!</div>';
+  html+='<div class="day-header-row"><div><div class="day-big-title">'+d.date+' · '+d.day+'</div>';
+  html+='<div style="display:flex;align-items:center;gap:6px;margin-top:2px">';
+  html+='<input id="sublabel-'+i+'" value="'+d.label+'" onblur="saveDayLabel('+i+',this.value)" onkeydown="if(event.key===String.fromCharCode(13))this.blur()" style="border:none;border-bottom:1.5px solid var(--gold);background:transparent;font-size:14px;color:var(--muted);font-family:var(--font-body);outline:none;width:160px;padding:1px 2px">';
+  html+='</div></div>';
+  var typeOptions=['rest','sightseeing','food','travel','paris','suggestion'];
+  var typeNames={rest:'Light Day',sightseeing:'Sightseeing',food:'Food Day',travel:'Travel Day',paris:'Paris',suggestion:'Free Day'};
+  var typeClasses={rest:'pace-light',sightseeing:'pace-med',food:'pace-light',travel:'pace-travel',paris:'pace-full',suggestion:'pace-med'};
+  var typeOpts=typeOptions.map(function(t){return '<option value="'+t+'"'+(t===d.type?' selected':'')+'>'+typeNames[t]+'</option>';}).join('');
+  html+='<select onchange="saveDayType('+i+',this.value)" class="pace-pill '+(typeClasses[d.type]||'pace-med')+'" style="border:none;cursor:pointer;font-family:var(--font-body);font-size:12px;font-weight:500;padding:4px 8px;border-radius:20px;-webkit-appearance:none;appearance:none;">'+typeOpts+'</select></div>';
   html+='<div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center">Hold &amp; drag to reorder · tap ✏ to edit</div>';
   html+='<div class="timeline" id="tl-'+i+'">';
 
@@ -1432,6 +1434,75 @@ function saveEditGuide(id){
 }
 
 
+
+
+function saveDayType(i, newType){
+  itinerary[i].type = newType;
+  renderDay(i);
+  // Update chip colour
+  var chip = document.getElementById('dc-'+i);
+  if(chip){
+    chip.className = 'day-chip ' + newType + (i===currentDayIdx?' active':'');
+  }
+  if(window._fbSave) window._fbSave();
+}
+
+function saveDayLabel(i, val){
+  if(!val || !val.trim()) return;
+  val = val.trim();
+  if(val === itinerary[i].label) return; // no change
+  itinerary[i].label = val;
+  if(window._fbSave) window._fbSave();
+}
+
+
+// ─── PACKING LIST ─────────────────────────────────────────────────────────────
+var packItems = [];
+
+function addPackItem(){
+  var inp = document.getElementById('pack-input');
+  var txt = inp ? inp.value.trim() : '';
+  if(!txt) return;
+  packItems.push({id:Date.now(), text:txt, checked:false});
+  inp.value = '';
+  renderPackList();
+  if(window._fbSave) window._fbSave();
+}
+
+function togglePackItem(id){
+  var item = packItems.find(function(x){return x.id===id;});
+  if(item){ item.checked = !item.checked; renderPackList(); if(window._fbSave) window._fbSave(); }
+}
+
+function deletePackItem(id){
+  packItems = packItems.filter(function(x){return x.id!==id;});
+  renderPackList();
+  if(window._fbSave) window._fbSave();
+}
+
+function renderPackList(){
+  var el = document.getElementById('pack-list');
+  if(!el) return;
+  if(!packItems.length){
+    el.innerHTML = '<div style="font-size:14px;color:var(--muted);padding:4px 0">No items yet — add things to pack!</div>';
+    return;
+  }
+  var packed = packItems.filter(function(x){return x.checked;}).length;
+  var html = '<div style="font-size:13px;color:var(--muted);margin-bottom:10px">'+packed+' / '+packItems.length+' packed</div>';
+  // Progress bar
+  var pct = packItems.length ? Math.round((packed/packItems.length)*100) : 0;
+  html += '<div style="height:6px;background:#e5e7eb;border-radius:4px;margin-bottom:12px"><div style="height:100%;width:'+pct+'%;background:var(--gold);border-radius:4px;transition:width .3s"></div></div>';
+  packItems.forEach(function(item){
+    var done = item.checked;
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">';
+    html += '<input type="checkbox"'+(done?' checked':'')+' onchange="togglePackItem('+item.id+')" style="width:20px;height:20px;cursor:pointer;accent-color:var(--gold);flex-shrink:0;">';
+    html += '<span style="flex:1;font-size:15px;'+(done?'text-decoration:line-through;color:var(--muted)':'')+'">' + item.text + '</span>';
+    html += '<button onclick="deletePackItem('+item.id+')" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:18px;padding:0 4px;">×</button>';
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
 // ─── TAB SWITCH ──────────────────────────────────────────────────────────────
 function switchTab(t){
   document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
@@ -1445,6 +1516,7 @@ function switchTab(t){
 renderFlights();
 renderAccoms();
 renderEmerg();
+renderPackList();
 showTip(0);
 loadWeather();
 loadFX();
@@ -1477,6 +1549,10 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 
 
 
+
+
+
+
 </script>
 
 <!-- Firebase ES Module — runs after main script, UI already rendered -->
@@ -1487,7 +1563,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 const FBCFG = {
   apiKey:            "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
   authDomain:        "silent-bicycle-92418-671fb.firebaseapp.com",
-  databaseURL:       "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app/",
+  databaseURL:       "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app",
   projectId:         "silent-bicycle-92418-671fb",
   storageBucket:     "silent-bicycle-92418-671fb.firebasestorage.app",
   messagingSenderId: "171163448108",
@@ -1539,6 +1615,7 @@ try {
 
         var payload = {
           expenses:    window.expenses    || [],
+          packItems:   window.packItems   || [],
           catTotals:   window.catTotals   || {},
           customEmerg: window.customEmerg || [],
           budgetMax:   (document.getElementById("budget-max") || {}).value || "3000",
@@ -1578,6 +1655,12 @@ try {
       if (Array.isArray(val.customEmerg)) {
         window.customEmerg.length = 0;
         val.customEmerg.forEach(function (e) { window.customEmerg.push(e); });
+      }
+      // Packing list
+      if (Array.isArray(val.packItems)) {
+        window.packItems.length = 0;
+        val.packItems.forEach(function(e){ window.packItems.push(e); });
+        if (typeof renderPackList === "function") renderPackList();
       }
       // Budget max
       if (val.budgetMax) {
