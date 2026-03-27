@@ -5,6 +5,19 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-status-bar-style" content="black-translucent">
 <meta charset="UTF-8">
+<link rel="manifest" href="data:application/json,{
+  %22name%22: %22Trip 2026%22,
+  %22short_name%22: %22Trip 2026%22,
+  %22start_url%22: %22.%22,
+  %22display%22: %22standalone%22,
+  %22background_color%22: %22%231a2744%22,
+  %22theme_color%22: %22%231a2744%22,
+  %22icons%22: [{%22src%22:%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E✈%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]
+}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trip 2026">
+<meta name="theme-color" content="#1a2744">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Trip 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
@@ -222,6 +235,10 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
 </head>
 <body>
 
+
+<div id="offline-banner" style="display:none;background:#f97316;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-family:var(--font-body);font-weight:500;">
+  📴 Offline — showing cached data. Changes will sync when reconnected.
+</div>
 <div class="header">
   <div class="header-top">
     <div>
@@ -1656,6 +1673,12 @@ var _origAddExp2 = addExp;
 addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 } // end if(!window._patchedFns)
 
+
+// Offline detection
+window.addEventListener('online',  function(){ document.getElementById('offline-banner').style.display='none'; });
+window.addEventListener('offline', function(){ document.getElementById('offline-banner').style.display='block'; });
+if (!navigator.onLine) document.getElementById('offline-banner').style.display='block';
+
 // Firebase sync handled by ES module below
 
 
@@ -1707,6 +1730,7 @@ try {
     syncUI("syncing", "Saving…");
     saveTimer = setTimeout(function () {
       try {
+        console.log('[Trip2026] Firebase save triggered');
         // Guide notes
         var gn = {};
         (window.guideData || []).forEach(function (g) {
@@ -1742,8 +1766,8 @@ try {
         };
 
         set(tripRef, payload)
-          .then(function ()  { syncUI("online", "🟢 Live"); })
-          .catch(function (e) { syncUI("offline", "⚠️ Offline"); console.error("FB save error:", e); });
+          .then(function ()  { syncUI("online", "🟢 Live"); console.log('[Trip2026] Saved OK'); })
+          .catch(function (e) { syncUI("offline", "⚠️ Offline"); console.error("[Trip2026] FB save FAILED:", e); });
       } catch (e) {
         console.error("_fbSave error:", e);
       }
@@ -1754,6 +1778,7 @@ try {
   onValue(tripRef, function (snap) {
     try {
       var val = snap.val();
+      console.log('[Trip2026] Firebase onValue fired, has data:', !!val);
       if (!val) { syncUI("online", "🟢 Ready"); return; }
 
       // Expenses — mutate in place so local var reference stays valid
@@ -1825,6 +1850,8 @@ try {
       }
       // Itinerary activity edits
       if (val.itinEdits && typeof val.itinEdits === "object") {
+        var editCount = Object.keys(val.itinEdits).length;
+        console.log('[Trip2026] Restoring itinEdits for', editCount, 'days');
         Object.keys(val.itinEdits).forEach(function (di) {
           var idx = parseInt(di);
           var day = val.itinEdits[di];
@@ -1841,12 +1868,21 @@ try {
         function(){ if(typeof renderFlights      ==="function") renderFlights(); },
         function(){ if(typeof renderAccoms       ==="function") renderAccoms(); },
         function(){ if(typeof renderEmerg        ==="function") renderEmerg(); },
-        function(){ if(typeof buildDayScroll     ==="function") buildDayScroll(); },
         function(){ if(typeof renderExpenses     ==="function") renderExpenses(); },
         function(){ if(typeof buildCatGrid       ==="function") buildCatGrid(); },
         function(){ if(typeof refreshBudget      ==="function") refreshBudget(); },
         function(){ if(typeof renderPayerSummary ==="function") renderPayerSummary(); },
-        function(){ if(typeof renderGuide        ==="function"){ var qs=document.querySelector(".guide-search"); renderGuide(qs?qs.value:""); } }
+        function(){ if(typeof renderGuide        ==="function"){ var qs=document.querySelector(".guide-search"); renderGuide(qs?qs.value:""); } },
+        function(){
+          // Rebuild day scroll chips (labels/types may have changed)
+          // then re-render current day (not always day 0)
+          if(typeof buildDayScroll==="function" && typeof renderDay==="function"){
+            var saved = typeof currentDayIdx !== "undefined" ? currentDayIdx : 0;
+            buildDayScroll();
+            // restore previously selected day
+            if(saved > 0 && saved < window.itinerary.length) selectDay(saved);
+          }
+        }
       ];
       reRenders.forEach(function(fn){ try{ fn(); } catch(e){ console.warn("render error:", e.message); } });
 
@@ -1866,5 +1902,69 @@ try {
 }
 </script>
 
+
+<script>
+// Register Service Worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    // Inline service worker as a blob URL
+    var swCode = `
+const CACHE = 'trip2026-v1';
+const FIREBASE_HOSTS = ['firebasedatabase.app', 'firebase.googleapis.com', 'firebasejs'];
+
+self.addEventListener('install', function(e) {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function(e) {
+  e.waitUntil(
+    caches.keys().then(function(keys) {
+      return Promise.all(keys.filter(function(k){ return k !== CACHE; }).map(function(k){ return caches.delete(k); }));
+    })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', function(e) {
+  var url = e.request.url;
+  // Always let Firebase requests go to network (for real-time sync)
+  if (FIREBASE_HOSTS.some(function(h){ return url.includes(h); })) {
+    e.respondWith(fetch(e.request).catch(function(){ return new Response('', {status: 503}); }));
+    return;
+  }
+  // For fonts and CDN scripts: network first, fall back to cache
+  if (url.includes('fonts.googleapis') || url.includes('cdnjs') || url.includes('gstatic.com/firebasejs')) {
+    e.respondWith(
+      fetch(e.request).then(function(res) {
+        var clone = res.clone();
+        caches.open(CACHE).then(function(cache){ cache.put(e.request, clone); });
+        return res;
+      }).catch(function() {
+        return caches.match(e.request);
+      })
+    );
+    return;
+  }
+  // For the HTML file itself: cache first, then network
+  e.respondWith(
+    caches.match(e.request).then(function(cached) {
+      var networkFetch = fetch(e.request).then(function(res) {
+        var clone = res.clone();
+        caches.open(CACHE).then(function(cache){ cache.put(e.request, clone); });
+        return res;
+      });
+      return cached || networkFetch;
+    })
+  );
+});
+`;
+    var blob = new Blob([swCode], {type: 'application/javascript'});
+    var swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl, {scope: './'})
+      .then(function(reg) { console.log('[Trip2026] Service Worker registered, offline ready'); })
+      .catch(function(e) { console.warn('[Trip2026] SW registration failed:', e); });
+  });
+}
+</script>
 </body>
 </html>
