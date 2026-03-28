@@ -4,6 +4,9 @@
   <link rel="apple-touch-icon" href="icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-status-bar-style" content="black-translucent">
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="UTF-8">
 <link rel="manifest" href="data:application/json,{
   %22name%22: %22Trip 2026%22,
@@ -20,13 +23,13 @@
 <meta name="theme-color" content="#1a2744">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Trip 2026</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Fonts replaced with system fonts for offline support -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
   --navy:#1a2744;--navy2:#253562;--gold:#c9973a;--gold-light:#f0d9a8;--gold-pale:#fdf5e6;
   --cream:#fdf8f0;--surface:#ffffff;--muted:#6b7280;--border:rgba(26,39,68,0.13);
-  --font-display:'Playfair Display',Georgia,serif;--font-body:'Source Sans 3',system-ui,sans-serif;
+  --font-display:Georgia,'Times New Roman',serif;--font-body:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
   --safe-bottom:env(safe-area-inset-bottom,0px);
 }
 html,body{height:100%;background:var(--cream);font-family:var(--font-body);color:var(--navy);font-size:16px;}
@@ -236,9 +239,6 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
 <body>
 
 
-<div id="offline-banner" style="display:none;background:#f97316;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-family:var(--font-body);font-weight:500;">
-  📴 Offline — showing cached data. Changes will sync when reconnected.
-</div>
 <div class="header">
   <div class="header-top">
     <div>
@@ -306,6 +306,18 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
 </div>
 
 <!-- ITINERARY TAB -->
+  <p class="sec-title">HK Shopping List</p>
+  <p style="font-size:13px;color:var(--muted);margin-top:-10px;margin-bottom:14px">Things to bring from Hong Kong</p>
+  <div class="card" style="padding:16px 18px">
+    <div id="buy-list"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+      <input id="buy-item" type="text" placeholder="What to buy (e.g. 老干媽辣椒醬)" style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:14px;outline:none;">
+      <input id="buy-where" type="text" placeholder="Where to buy (e.g. PARKnSHOP, 759阿信屋)" style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:14px;outline:none;">
+      <input id="buy-qty" type="text" placeholder="Quantity (e.g. 2 bottles)" style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:14px;outline:none;">
+      <button onclick="addBuyItem()" style="width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;font-family:var(--font-body);">+ Add Item</button>
+    </div>
+  </div>
+
 <div id="tab-itinerary" class="tab">
   <div class="day-scroll" id="day-scroll"></div>
   <div id="day-view"></div>
@@ -376,6 +388,7 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
 <!-- Firebase loaded via ES module below -->
 
 <script>
+
 
 
 
@@ -568,6 +581,7 @@ var itinerary = [
 
 window.itinerary = itinerary;
 window.packItems  = packItems;
+window.buyItems   = buyItems;
 
 var guideData = [
   {id:'borough',name:'Borough Market',cat:'Market',city:'London',catColor:'#f59e0b',catBg:'#fef3c7',
@@ -1594,6 +1608,7 @@ function addPackItem(){
   packItems.push({id:Date.now(), text:txt, checked:false});
   inp.value = '';
   renderPackList();
+renderBuyList();
   if(window._fbSave) window._fbSave();
 }
 
@@ -1605,6 +1620,7 @@ function togglePackItem(id){
 function deletePackItem(id){
   packItems = packItems.filter(function(x){return x.id!==id;});
   renderPackList();
+renderBuyList();
   if(window._fbSave) window._fbSave();
 }
 
@@ -1631,6 +1647,70 @@ function renderPackList(){
   el.innerHTML = html;
 }
 
+
+// ─── HK SHOPPING LIST ─────────────────────────────────────────────────────────
+var buyItems = [];
+window.buyItems = buyItems;
+
+function addBuyItem(){
+  var item  = document.getElementById('buy-item');
+  var where = document.getElementById('buy-where');
+  var qty   = document.getElementById('buy-qty');
+  var txt = item ? item.value.trim() : '';
+  if(!txt){ alert('Please enter what to buy.'); return; }
+  buyItems.push({
+    id:      Date.now(),
+    text:    txt,
+    where:   where ? where.value.trim() : '',
+    qty:     qty   ? qty.value.trim()   : '',
+    checked: false
+  });
+  if(item)  item.value  = '';
+  if(where) where.value = '';
+  if(qty)   qty.value   = '';
+  renderBuyList();
+  if(window._fbSave) window._fbSave();
+}
+
+function toggleBuyItem(id){
+  var item = buyItems.find(function(x){return x.id===id;});
+  if(item){ item.checked = !item.checked; renderBuyList(); if(window._fbSave) window._fbSave(); }
+}
+
+function deleteBuyItem(id){
+  buyItems = buyItems.filter(function(x){return x.id!==id;});
+  window.buyItems = buyItems;
+  renderBuyList();
+  if(window._fbSave) window._fbSave();
+}
+
+function renderBuyList(){
+  var el = document.getElementById('buy-list');
+  if(!el) return;
+  if(!buyItems.length){
+    el.innerHTML = '<div style="font-size:14px;color:var(--muted);padding:4px 0">No items yet — add things to bring from HK!</div>';
+    return;
+  }
+  var bought = buyItems.filter(function(x){return x.checked;}).length;
+  var pct = buyItems.length ? Math.round((bought/buyItems.length)*100) : 0;
+  var html = '<div style="font-size:13px;color:var(--muted);margin-bottom:8px">'+bought+' / '+buyItems.length+' bought</div>';
+  html += '<div style="height:6px;background:#e5e7eb;border-radius:4px;margin-bottom:12px"><div style="height:100%;width:'+pct+'%;background:var(--gold);border-radius:4px;transition:width .3s"></div></div>';
+  buyItems.forEach(function(item){
+    var done = item.checked;
+    var strike = done ? 'text-decoration:line-through;color:var(--muted);' : '';
+    html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);">';
+    html += '<input type="checkbox"'+(done?' checked':'')+' onchange="toggleBuyItem('+item.id+')" style="width:20px;height:20px;cursor:pointer;accent-color:var(--gold);flex-shrink:0;margin-top:2px;">';
+    html += '<div style="flex:1;">';
+    html += '<div style="font-size:15px;font-weight:500;'+strike+'">'+item.text+'</div>';
+    if(item.where) html += '<div style="font-size:12px;color:var(--muted);margin-top:3px;">📍 '+item.where+'</div>';
+    if(item.qty)   html += '<div style="font-size:12px;color:var(--gold);font-weight:500;margin-top:2px;">📦 '+item.qty+'</div>';
+    html += '</div>';
+    html += '<button onclick="deleteBuyItem('+item.id+')" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:18px;padding:0 4px;flex-shrink:0;">×</button>';
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
 // ─── TAB SWITCH ──────────────────────────────────────────────────────────────
 function switchTab(t){
   document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
@@ -1645,6 +1725,7 @@ renderFlights();
 renderAccoms();
 renderEmerg();
 renderPackList();
+renderBuyList();
 showTip(0);
 loadWeather();
 loadFX();
@@ -1674,12 +1755,8 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 } // end if(!window._patchedFns)
 
 
-// Offline detection
-window.addEventListener('online',  function(){ document.getElementById('offline-banner').style.display='none'; });
-window.addEventListener('offline', function(){ document.getElementById('offline-banner').style.display='block'; });
-if (!navigator.onLine) document.getElementById('offline-banner').style.display='block';
-
 // Firebase sync handled by ES module below
+
 
 
 
@@ -1754,6 +1831,7 @@ try {
 
         var payload = {
           expenses:    window.expenses    || [],
+          buyItems:    window.buyItems    || [],
           packItems:   window.packItems   || [],
           catTotals:   window.catTotals   || {},
           customEmerg: window.customEmerg || [],
@@ -1796,11 +1874,19 @@ try {
         window.customEmerg.length = 0;
         val.customEmerg.forEach(function (e) { window.customEmerg.push(e); });
       }
+      // Buy list
+      if (Array.isArray(val.buyItems)) {
+        window.buyItems.length = 0;
+        val.buyItems.forEach(function(e){ window.buyItems.push(e); });
+        buyItems = window.buyItems;
+        if (typeof renderBuyList === "function") renderBuyList();
+      }
       // Packing list
       if (Array.isArray(val.packItems)) {
         window.packItems.length = 0;
         val.packItems.forEach(function(e){ window.packItems.push(e); });
         if (typeof renderPackList === "function") renderPackList();
+renderBuyList();
       }
       // Budget max
       if (val.budgetMax) {
@@ -1897,74 +1983,16 @@ try {
   });
 
 } catch (e) {
-  syncUI("offline", "⚠️ Firebase error");
-  console.error("Firebase init error:", e);
+  if (!navigator.onLine) {
+    syncUI("offline", "📴 Offline mode");
+  } else {
+    syncUI("offline", "⚠️ Sync error");
+  }
+  console.warn("[Trip2026] Firebase:", e.message);
 }
 </script>
 
 
-<script>
-// Register Service Worker for offline support
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    // Inline service worker as a blob URL
-    var swCode = `
-const CACHE = 'trip2026-v1';
-const FIREBASE_HOSTS = ['firebasedatabase.app', 'firebase.googleapis.com', 'firebasejs'];
 
-self.addEventListener('install', function(e) {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', function(e) {
-  e.waitUntil(
-    caches.keys().then(function(keys) {
-      return Promise.all(keys.filter(function(k){ return k !== CACHE; }).map(function(k){ return caches.delete(k); }));
-    })
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', function(e) {
-  var url = e.request.url;
-  // Always let Firebase requests go to network (for real-time sync)
-  if (FIREBASE_HOSTS.some(function(h){ return url.includes(h); })) {
-    e.respondWith(fetch(e.request).catch(function(){ return new Response('', {status: 503}); }));
-    return;
-  }
-  // For fonts and CDN scripts: network first, fall back to cache
-  if (url.includes('fonts.googleapis') || url.includes('cdnjs') || url.includes('gstatic.com/firebasejs')) {
-    e.respondWith(
-      fetch(e.request).then(function(res) {
-        var clone = res.clone();
-        caches.open(CACHE).then(function(cache){ cache.put(e.request, clone); });
-        return res;
-      }).catch(function() {
-        return caches.match(e.request);
-      })
-    );
-    return;
-  }
-  // For the HTML file itself: cache first, then network
-  e.respondWith(
-    caches.match(e.request).then(function(cached) {
-      var networkFetch = fetch(e.request).then(function(res) {
-        var clone = res.clone();
-        caches.open(CACHE).then(function(cache){ cache.put(e.request, clone); });
-        return res;
-      });
-      return cached || networkFetch;
-    })
-  );
-});
-`;
-    var blob = new Blob([swCode], {type: 'application/javascript'});
-    var swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl, {scope: './'})
-      .then(function(reg) { console.log('[Trip2026] Service Worker registered, offline ready'); })
-      .catch(function(e) { console.warn('[Trip2026] SW registration failed:', e); });
-  });
-}
-</script>
 </body>
 </html>
