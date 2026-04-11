@@ -1,9 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
 <head>
-  <link rel="apple-touch-icon" href="icon.png">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-status-bar-style" content="black-translucent">
 <meta charset="UTF-8">
 <link rel="manifest" href="data:application/json,{
   %22name%22: %22Trip 2026%22,
@@ -268,6 +264,9 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
   <p class="sec-title">London Weather</p>
   <div id="weather-box"><div style="text-align:center;padding:20px;color:var(--muted);font-size:14px">Loading…</div></div>
 
+  <p class="sec-title">Paris Weather</p>
+  <div id="paris-weather-box"><div style="text-align:center;padding:20px;color:var(--muted);font-size:14px">Loading…</div></div>
+
   <p class="sec-title">Travel Tips</p>
   <div class="tips-nav" id="tips-nav">
     <button class="tip-tab-btn active" onclick="showTip(0)">👗 Clothing</button>
@@ -382,9 +381,260 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
   </div>
 </div>
 
-<!-- Firebase loaded via ES module below -->
+ = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
+} // end if(!window._patchedFns)
+
+
+// Firebase sync handled by ES module below
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+
+<!-- Firebase ES Module — runs after main script, UI already rendered -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const FBCFG = {
+  apiKey:            "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
+  authDomain:        "silent-bicycle-92418-671fb.firebaseapp.com",
+  databaseURL:       "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "silent-bicycle-92418-671fb",
+  storageBucket:     "silent-bicycle-92418-671fb.firebasestorage.app",
+  messagingSenderId: "171163448108",
+  appId:             "1:171163448108:web:1c3661dbfb514af2c4b289"
+};
+
+// ── Sync status helper — directly touches DOM, no cross-script call ──────────
+function syncUI(state, msg) {
+  var dot = document.getElementById("sync-dot");
+  var lbl = document.getElementById("sync-label");
+  if (dot) dot.className = "sync-dot" + (state === "syncing" ? " syncing" : state === "offline" ? " offline" : "");
+  if (lbl) lbl.textContent = msg || "";
+}
+
+try {
+  const app     = initializeApp(FBCFG);
+  const db      = getDatabase(app);
+  const tripRef = ref(db, "tripData");
+
+  syncUI("syncing", "Connecting…");
+
+  // ── Save to Firebase (debounced 800ms) ─────────────────────────────────────
+  let saveTimer = null;
+  window._fbSave = function () {
+    clearTimeout(saveTimer);
+    syncUI("syncing", "Saving…");
+    saveTimer = setTimeout(function () {
+      try {
+        console.log('[Trip2026] Firebase save triggered');
+        // Guide notes
+        var gn = {};
+        (window.guideData || []).forEach(function (g) {
+          gn[String(g.id)] = { notes: g.notes || "", img: g.img || null };
+        });
+        // Itinerary edits
+        var ie = {};
+        (window.itinerary || []).forEach(function (d, i) {
+          ie[i] = { activities: d.activities, label: d.label, type: d.type };
+        });
+        // Flight edits
+        var fe = {};
+        (window.flights || []).forEach(function (f) {
+          fe[f.id] = { num: f.num, dep: f.dep, arr: f.arr, terminal: f.terminal, gate: f.gate, cabin: f.cabin };
+        });
+        // Accom edits
+        var ae = {};
+        (window.accoms || []).forEach(function (a) {
+          ae[a.id] = { name: a.name, addr: a.addr, nearTube: a.nearTube, checkin: a.checkin, wifi: a.wifi };
+        });
+
+        var payload = {
+          expenses:    window.expenses    || [],
+          buyItems:    window.buyItems    || [],
+          packItems:   window.packItems   || [],
+          catTotals:   window.catTotals   || {},
+          customEmerg: window.customEmerg || [],
+          budgetMax:   (document.getElementById("budget-max") || {}).value || "3000",
+          guideNotes:  gn,
+          guideCustom: (window.guideData || []).filter(function (g) { return String(g.id).indexOf("custom-") === 0; }),
+          itinEdits:   ie,
+          flightEdits: fe,
+          accomEdits:  ae
+        };
+
+        set(tripRef, payload)
+          .then(function ()  { syncUI("online", "🟢 Live"); console.log('[Trip2026] Saved OK'); })
+          .catch(function (e) { syncUI("offline", "⚠️ Offline"); console.error("[Trip2026] FB save FAILED:", e); });
+      } catch (e) {
+        console.error("_fbSave error:", e);
+      }
+    }, 800);
+  };
+
+  // ── Live listener — merges cloud data on top of local defaults ──────────────
+  onValue(tripRef, function (snap) {
+    try {
+      var val = snap.val();
+      console.log('[Trip2026] Firebase onValue fired, has data:', !!val);
+      if (!val) { syncUI("online", "🟢 Ready"); return; }
+
+      // Expenses — mutate in place so local var reference stays valid
+      if (Array.isArray(val.expenses)) {
+        window.expenses.length = 0;
+        val.expenses.forEach(function (e) { window.expenses.push(e); });
+      }
+      // Category totals
+      if (val.catTotals && typeof val.catTotals === "object") {
+        Object.keys(window.catTotals).forEach(function (k) { window.catTotals[k] = 0; });
+        Object.keys(val.catTotals).forEach(function (k) { window.catTotals[k] = val.catTotals[k]; });
+      }
+      // Emergency contacts
+      if (Array.isArray(val.customEmerg)) {
+        window.customEmerg.length = 0;
+        val.customEmerg.forEach(function (e) { window.customEmerg.push(e); });
+      }
+      // Buy list
+      if (Array.isArray(val.buyItems)) {
+        window.buyItems.length = 0;
+        val.buyItems.forEach(function(e){ window.buyItems.push(e); });
+        buyItems = window.buyItems;
+        if (typeof renderBuyList === "function") renderBuyList();
+      }
+      // Packing list
+      if (Array.isArray(val.packItems)) {
+        window.packItems.length = 0;
+        val.packItems.forEach(function(e){ window.packItems.push(e); });
+        if (typeof renderPackList === "function") renderPackList();
+renderBuyList();
+      }
+      // Budget max
+      if (val.budgetMax) {
+        var bm = document.getElementById("budget-max");
+        if (bm) bm.value = val.budgetMax;
+      }
+      // Guide notes — patch into existing objects
+      if (val.guideNotes && typeof val.guideNotes === "object") {
+        Object.keys(val.guideNotes).forEach(function (id) {
+          var g = (window.guideData || []).find(function (x) { return String(x.id) === String(id); });
+          if (g) { g.notes = val.guideNotes[id].notes || ""; g.img = val.guideNotes[id].img || null; }
+        });
+      }
+      // Custom guide cards added by user
+      if (Array.isArray(val.guideCustom)) {
+        val.guideCustom.forEach(function (g) {
+          if (!(window.guideData || []).find(function (x) { return String(x.id) === String(g.id); }))
+            window.guideData.push(g);
+        });
+      }
+      // Flight edits (only non-empty fields)
+      if (val.flightEdits && typeof val.flightEdits === "object") {
+        Object.keys(val.flightEdits).forEach(function (fid) {
+          var f = (window.flights || []).find(function (x) { return x.id === fid; });
+          if (!f) return;
+          var e = val.flightEdits[fid];
+          if (e.num)      f.num      = e.num;
+          if (e.dep)      f.dep      = e.dep;
+          if (e.arr)      f.arr      = e.arr;
+          if (e.terminal) f.terminal = e.terminal;
+          if (e.gate)     f.gate     = e.gate;
+          if (e.cabin)    f.cabin    = e.cabin;
+        });
+      }
+      // Accom edits
+      if (val.accomEdits && typeof val.accomEdits === "object") {
+        Object.keys(val.accomEdits).forEach(function (aid) {
+          var a = (window.accoms || []).find(function (x) { return x.id === aid; });
+          if (!a) return;
+          var e = val.accomEdits[aid];
+          if (e.name)     a.name     = e.name;
+          if (e.addr)     a.addr     = e.addr;
+          if (e.nearTube) a.nearTube = e.nearTube;
+          if (e.checkin)  a.checkin  = e.checkin;
+          if (e.wifi)     a.wifi     = e.wifi;
+        });
+      }
+      // Itinerary activity edits
+      if (val.itinEdits && typeof val.itinEdits === "object") {
+        var editCount = Object.keys(val.itinEdits).length;
+        console.log('[Trip2026] Restoring itinEdits for', editCount, 'days');
+        Object.keys(val.itinEdits).forEach(function (di) {
+          var idx = parseInt(di);
+          var day = val.itinEdits[di];
+          if (window.itinerary[idx] && day) {
+            if (Array.isArray(day.activities)) window.itinerary[idx].activities = day.activities;
+            if (day.label) window.itinerary[idx].label = day.label;
+            if (day.type)  window.itinerary[idx].type  = day.type;
+          }
+        });
+      }
+
+      // Re-enforce paris type for 28 May–2 Jun (overrides any cloud data)
+      var _pd = ['28 May','29 May','30 May','31 May','1 Jun','2 Jun'];
+      (window.itinerary||[]).forEach(function(day){
+        if(_pd.indexOf(day.date) !== -1) day.type = 'paris';
+      });
+      // Re-render all affected sections (each wrapped so one crash won't stop others)
+      var reRenders = [
+        function(){ if(typeof renderFlights      ==="function") renderFlights(); },
+        function(){ if(typeof renderAccoms       ==="function") renderAccoms(); },
+        function(){ if(typeof renderEmerg        ==="function") renderEmerg(); },
+        function(){ if(typeof renderExpenses     ==="function") renderExpenses(); },
+        function(){ if(typeof buildCatGrid       ==="function") buildCatGrid(); },
+        function(){ if(typeof refreshBudget      ==="function") refreshBudget(); },
+        function(){ if(typeof renderPayerSummary ==="function") renderPayerSummary(); },
+        function(){ if(typeof renderGuide        ==="function"){ var qs=document.querySelector(".guide-search"); renderGuide(qs?qs.value:""); } },
+        function(){
+          // Rebuild day scroll chips (labels/types may have changed)
+          // then re-render current day (not always day 0)
+          if(typeof buildDayScroll==="function" && typeof renderDay==="function"){
+            var saved = typeof currentDayIdx !== "undefined" ? currentDayIdx : 0;
+            buildDayScroll();
+            // restore previously selected day
+            if(saved > 0 && saved < window.itinerary.length) selectDay(saved);
+          }
+        }
+      ];
+      reRenders.forEach(function(fn){ try{ fn(); } catch(e){ console.warn("render error:", e.message); } });
+
+      syncUI("online", "🟢 Live");
+    } catch (e) {
+      console.error("onValue handler error:", e);
+      syncUI("offline", "⚠️ Error");
+    }
+  }, function (err) {
+    syncUI("offline", "⚠️ Offline");
+    console.error("Firebase listener error:", err);
+  });
+
+} catch (e) {
+  if (!navigator.onLine) {
+    syncUI("offline", "📴 Offline mode");
+  } else {
+    syncUI("offline", "⚠️ Sync error");
+  }
+  console.warn("[Trip2026] Firebase:", e.message);
+}
+</script>
+
+
 
 <script>
+
+
+
+
+
 
 
 
@@ -424,7 +674,7 @@ window.reminders   = reminders;
 // itinerary, guideData, flights, accoms exposed after their declarations below
 var itinerary = [
   {date:'13 May',day:'Wed',label:'Arrival',type:'travel',activities:[
-    {name:'Arrive Heathrow T3',time:'TBC',addr:'London Heathrow, TW6 1QG',cost:'Flight',note:'Take Piccadilly Line or Heathrow Express to central London. Journey ~50min/15min.'}
+    {name:'Arrive Heathrow T3',time:'TBC',addr:'London Heathrow, TW6 1QG',cost:'Flight',note:'Take Piccadilly Line or Heathrow Express to central London. Journey ~50min/15min.',lat:51.47,lng:-0.4543}
   ]},
   {date:'14 May',day:'Thu',label:'Rest + Wetherspoon',type:'rest',activities:[
     {name:'Rest & settle in',time:'Morning',addr:'Home',cost:'Free',note:'Easy day after long flight.'},
@@ -435,18 +685,18 @@ var itinerary = [
     {name:'Costco stock-up',time:'After 5pm',addr:'Costco Haringey or nearest',cost:'As needed',note:'Good for snacks, household items. Membership needed.'}
   ]},
   {date:'16 May',day:'Sat',label:'London Bridge + Borough Market',type:'sightseeing',activities:[
-    {name:'Borough Market',time:'10:00am',addr:'8 Southwark St, SE1 1TL',cost:'Free entry',note:'One of London\'s greatest food markets. Thu–Sat only. Arrive before noon.'},
-    {name:'London Bridge walk',time:'12:00pm',addr:'London Bridge, SE1',cost:'Free',note:'Walk across for Thames views and The Shard.'},
+    {name:'Borough Market',time:'10:00am',addr:'8 Southwark St, SE1 1TL',cost:'Free entry',note:'One of London\'s greatest food markets. Thu–Sat only. Arrive before noon.',lat:51.5055,lng:-0.091},
+    {name:'London Bridge walk',time:'12:00pm',addr:'London Bridge, SE1',cost:'Free',note:'Walk across for Thames views and The Shard.',lat:51.5079,lng:-0.0877},
     {name:'Market lunch',time:'12:30pm',addr:'Borough Market stalls',cost:'~£15–20/person',note:''},
     {name:'South Bank riverside walk',time:'2:00pm',addr:'South Bank, SE1',cost:'Free',note:'Gentle walk along the Thames. Tate Modern nearby.'}
   ]},
   {date:'17 May',day:'Sun',label:'Kew Gardens',type:'sightseeing',activities:[
-    {name:'Royal Botanic Gardens Kew',time:'10:30am',addr:'Kew, Richmond, TW9 3AB',cost:'£22/adult',note:'Allow 3–4 hrs. Comfortable shoes. District Line to Kew Gardens station.'},
+    {name:'Royal Botanic Gardens Kew',time:'10:30am',addr:'Kew, Richmond, TW9 3AB',cost:'£22/adult',note:'Allow 3–4 hrs. Comfortable shoes. District Line to Kew Gardens station.',lat:51.4787,lng:-0.2956},
     {name:'Lunch at Kew',time:'1:00pm',addr:'The Botanical Kitchen, Kew',cost:'~£20/person',note:''},
-    {name:'Palm House & glasshouses',time:'2:30pm',addr:'Palm House, Kew Gardens',cost:'Included',note:'Don\'t miss the Palm House — spectacular Victorian iron & glass.'}
+    {name:'Palm House & glasshouses',time:'2:30pm',addr:'Palm House, Kew Gardens',cost:'Included',note:'Don\'t miss the Palm House — spectacular Victorian iron & glass.',lat:51.4787,lng:-0.2958}
   ]},
   {date:'18 May',day:'Mon',label:'British Museum',type:'sightseeing',activities:[
-    {name:'British Museum',time:'10:00am',addr:'Great Russell St, WC1B 3DG',cost:'Free',note:'Rosetta Stone, Egyptian mummies. Very large — focus on 2–3 galleries only.'},
+    {name:'British Museum',time:'10:00am',addr:'Great Russell St, WC1B 3DG',cost:'Free',note:'Rosetta Stone, Egyptian mummies. Very large — focus on 2–3 galleries only.',lat:51.5194,lng:-0.127},
     {name:'Lunch nearby',time:'1:00pm',addr:'Museum Tavern, Great Russell St',cost:'~£15/person',note:''},
     {name:'Rest afternoon',time:'3:00pm',addr:'Home',cost:'Free',note:'Museums are tiring — good to rest after.'}
   ]},
@@ -459,25 +709,25 @@ var itinerary = [
     {name:'Seafood dinner at home',time:'6:00pm',addr:'Home',cost:'Market price',note:'Cook the fresh seafood from the morning. Enjoy!'}
   ]},
   {date:'21 May',day:'Thu',label:'Natural History Museum + Harrods',type:'sightseeing',activities:[
-    {name:'Natural History Museum',time:'10:00am',addr:'Cromwell Rd, SW7 5BD',cost:'Free',note:'Blue Whale skeleton, dinosaurs. South Kensington Tube.'},
+    {name:'Natural History Museum',time:'10:00am',addr:'Cromwell Rd, SW7 5BD',cost:'Free',note:'Blue Whale skeleton, dinosaurs. South Kensington Tube.',lat:51.4967,lng:-0.1764},
     {name:'Lunch at South Ken',time:'1:00pm',addr:'Brompton Road area',cost:'~£15/person',note:'Many cafés nearby.'},
-    {name:'Harrods browse',time:'3:00pm',addr:'87–135 Brompton Rd, SW1X 7XL',cost:'Window shopping!',note:'10-min walk from museum. Famous food hall worth seeing. No need to buy!'}
+    {name:'Harrods browse',time:'3:00pm',addr:'87–135 Brompton Rd, SW1X 7XL',cost:'Window shopping!',note:'10-min walk from museum. Famous food hall worth seeing. No need to buy!',lat:51.4994,lng:-0.1632}
   ]},
   {date:'22 May',day:'Fri',label:'Arsenal Stadium Tour',type:'sightseeing',activities:[
-    {name:'Emirates Stadium Tour',time:'11:00am',addr:'Emirates Stadium, N7 7AJ',cost:'£30/adult',note:'⚠️ Must pre-book at arsenal.com/tours. Tube: Arsenal (Piccadilly Line).'},
+    {name:'Emirates Stadium Tour',time:'11:00am',addr:'Emirates Stadium, N7 7AJ',cost:'£30/adult',note:'⚠️ Must pre-book at arsenal.com/tours. Tube: Arsenal (Piccadilly Line).',lat:51.5549,lng:-0.1084},
     {name:'Lunch Holloway Road',time:'1:30pm',addr:'Holloway Road, N7',cost:'~£15/person',note:''},
     {name:'Rest afternoon',time:'3:00pm',addr:'Home',cost:'Free',note:''}
   ]},
   {date:'23 May',day:'Sat',label:'Big Ben / Buckingham / Chinatown',type:'sightseeing',activities:[
-    {name:'Buckingham Palace',time:'10:00am',addr:'Buckingham Palace, SW1A 1AA',cost:'Free (outside)',note:'Check Changing of Guard schedule at royal.uk.'},
+    {name:'Buckingham Palace',time:'10:00am',addr:'Buckingham Palace, SW1A 1AA',cost:'Free (outside)',note:'Check Changing of Guard schedule at royal.uk.',lat:51.5014,lng:-0.1419},
     {name:"St James's Park",time:'11:00am',addr:"St James's Park, SW1A 2BJ",cost:'Free',note:'Beautiful park between the Palace and Westminster.'},
-    {name:'Big Ben & Westminster',time:'12:00pm',addr:'Westminster Bridge, SW1A 0AA',cost:'Free',note:'Great photo spot. Westminster Abbey nearby (£30).'},
-    {name:'Chinatown dim sum lunch',time:'1:30pm',addr:'Gerrard St, Soho, W1D 5PT',cost:'~£20/person',note:'Familiar Cantonese food — very comforting!'},
-    {name:'Soho stroll',time:'3:00pm',addr:'Soho, W1',cost:'Free',note:'Lively area — rest whenever tired.'}
+    {name:'Big Ben & Westminster',time:'12:00pm',addr:'Westminster Bridge, SW1A 0AA',cost:'Free',note:'Great photo spot. Westminster Abbey nearby (£30).',lat:51.4994,lng:-0.1245},
+    {name:'Chinatown dim sum lunch',time:'1:30pm',addr:'Gerrard St, Soho, W1D 5PT',cost:'~£20/person',note:'Familiar Cantonese food — very comforting!',lat:51.5117,lng:-0.1313},
+    {name:'Soho stroll',time:'3:00pm',addr:'Soho, W1',cost:'Free',note:'Lively area — rest whenever tired.',lat:51.513,lng:-0.131}
   ]},
   {date:'24 May',day:'Sun',label:'Oxford Day Trip',type:'sightseeing',activities:[
-    {name:'Train to Oxford',time:'9:30am',addr:'Paddington Station, W2 1HB',cost:'~£30–40 return',note:'Book on trainline.com. Journey ~1 hour.'},
-    {name:'Oxford city walk',time:'11:00am',addr:'Radcliffe Camera, OX1 4BG',cost:'Free',note:'Walk the colleges — Christ Church, Bodleian Library.'},
+    {name:'Train to Oxford',time:'9:30am',addr:'Paddington Station, W2 1HB',cost:'~£30–40 return',note:'Book on trainline.com. Journey ~1 hour.',lat:51.5154,lng:-0.1755},
+    {name:'Oxford city walk',time:'11:00am',addr:'Radcliffe Camera, OX1 4BG',cost:'Free',note:'Walk the colleges — Christ Church, Bodleian Library.',lat:51.7548,lng:-1.2544},
     {name:'Lunch in Oxford',time:'1:00pm',addr:'The Covered Market, Oxford',cost:'~£15/person',note:''},
     {name:'Return to London',time:'4:00pm',addr:'Oxford Station',cost:'Included',note:'Don\'t overtire — head back by 4–5pm.'}
   ]},
@@ -487,48 +737,48 @@ var itinerary = [
   {date:'26 May',day:'Tue',label:'Free Day',type:'rest',activities:[]},
   {date:'27 May',day:'Wed',label:'Free Day',type:'rest',activities:[]},
   {date:'28 May',day:'Thu',label:'Eurostar to Paris',type:'paris',activities:[
-    {name:'Eurostar depart London St Pancras',time:'6:00am',addr:'St Pancras International, London N1C 4QP',cost:'Booked',note:'Depart 06:00. Arrive Paris Gare du Nord 09:30 (Paris time). Allow time to clear passport control.'},
-    {name:'Check in & freshen up',time:'10:30am',addr:'Paris Accommodation',cost:'Free',note:'Drop bags or check in. Hotel may hold luggage if room not ready.'},
-    {name:'Late brunch — Cafe Louise',time:'12:00pm',addr:'155 Boulevard Saint-Germain, 75006 Paris',cost:'Pass included',note:'Croissant, juice, pancakes. Use Paris Pass — activate today on first use.'},
-    {name:'Big Bus Red Route — full orientation loop',time:'2:00pm',addr:'Stop 1: 11 Avenue de l\'Opera, 75001 Paris',cost:'Pass included',note:'Do NOT hop off — sit on top deck and see all of Paris. Full circuit = 2hrs 15min. Commentary in 11 languages.'},
-    {name:'French Apero — Saint-Germain',time:'5:00pm',addr:'155 Boulevard Saint-Germain, 75006 Paris',cost:'Pass included',note:'⚠️ Pass offer Mon–Fri 14:30–18:00 ONLY. Thursday qualifies. Arrive by 17:00 to enjoy before 18:00 cutoff.'},
-    {name:'Dinner — Croque Monsieur & Champagne by the Seine',time:'7:30pm',addr:'1 Place du Chatelet, 75001 Paris',cost:'Pass included',note:'Croque monsieur/madame + fries + kir royale Champagne cocktail. Easy first night by the river.'}
+    {name:'Eurostar depart London St Pancras',time:'6:00am',addr:'St Pancras International, London N1C 4QP',cost:'Booked',note:'Depart 06:00. Arrive Paris Gare du Nord 09:30 (Paris time). Allow time to clear passport control.',lat:51.5322,lng:-0.1231},
+    {name:'Check in & freshen up',time:'10:30am',addr:'Paris Accommodation',cost:'Free',note:'Drop bags or check in. Hotel may hold luggage if room not ready.',lat:48.86,lng:2.35},
+    {name:'Late brunch — Cafe Louise',time:'12:00pm',addr:'155 Boulevard Saint-Germain, 75006 Paris',cost:'Pass included',note:'Croissant, juice, pancakes. Use Paris Pass — activate today on first use.',lat:48.8537,lng:2.3325},
+    {name:'Big Bus Red Route — full orientation loop',time:'2:00pm',addr:'Stop 1: 11 Avenue de l\'Opera, 75001 Paris',cost:'Pass included',note:'Do NOT hop off — sit on top deck and see all of Paris. Full circuit = 2hrs 15min. Commentary in 11 languages.',lat:48.8656,lng:2.3321},
+    {name:'French Apero — Saint-Germain',time:'5:00pm',addr:'155 Boulevard Saint-Germain, 75006 Paris',cost:'Pass included',note:'⚠️ Pass offer Mon–Fri 14:30–18:00 ONLY. Thursday qualifies. Arrive by 17:00 to enjoy before 18:00 cutoff.',lat:48.8537,lng:2.3325},
+    {name:'Dinner — Croque Monsieur & Champagne by the Seine',time:'7:30pm',addr:'1 Place du Chatelet, 75001 Paris',cost:'Pass included',note:'Croque monsieur/madame + fries + kir royale Champagne cocktail. Easy first night by the river.',lat:48.8582,lng:2.3469}
   ]},
   {date:'29 May',day:'Fri',label:'Eiffel Tower + River Cruise',type:'paris',activities:[
-    {name:'French Wine Tasting — Les Caves du Louvre',time:'10:00am',addr:'52 Rue de l\'Arbre Sec, 75001 Paris',cost:'Pass included',note:'⚠️ ONLY open Mon–Fri 10:00–13:00. Historic 18th-century royal wine cellars. 3 French wines with sommelier. No reservation — arrive promptly at 10:00.'},
-    {name:'Eiffel Tower 2nd Floor Guided Climb',time:'11:30am',addr:'Allee des Refuzniks, 75007 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK 4–6 weeks ahead — sells out fast. Guided stair climb ~700 steps to 2nd floor. Evening dusk slot also recommended.'},
-    {name:'Lunch — Baked Camembert & Wine',time:'1:30pm',addr:'17 Avenue de la Motte-Picquet, 75007 Paris',cost:'Pass included',note:'5-min walk from Eiffel Tower. Warm Camembert + glass of wine. Leisurely post-climb lunch.'},
-    {name:'Bateaux Parisiens Seine River Cruise',time:'3:30pm',addr:'Port de la Bourdonnais, 75007 Paris',cost:'Pass included',note:'1-hour audio cruise past Notre-Dame, Louvre, Orsay, bridges. Show pass at ticket desk before boarding.'},
+    {name:'French Wine Tasting — Les Caves du Louvre',time:'10:00am',addr:'52 Rue de l\'Arbre Sec, 75001 Paris',cost:'Pass included',note:'⚠️ ONLY open Mon–Fri 10:00–13:00. Historic 18th-century royal wine cellars. 3 French wines with sommelier. No reservation — arrive promptly at 10:00.',lat:48.861,lng:2.3418},
+    {name:'Eiffel Tower 2nd Floor Guided Climb',time:'11:30am',addr:'Allee des Refuzniks, 75007 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK 4–6 weeks ahead — sells out fast. Guided stair climb ~700 steps to 2nd floor. Evening dusk slot also recommended.',lat:48.8584,lng:2.2945},
+    {name:'Lunch — Baked Camembert & Wine',time:'1:30pm',addr:'17 Avenue de la Motte-Picquet, 75007 Paris',cost:'Pass included',note:'5-min walk from Eiffel Tower. Warm Camembert + glass of wine. Leisurely post-climb lunch.',lat:48.8547,lng:2.3014},
+    {name:'Bateaux Parisiens Seine River Cruise',time:'3:30pm',addr:'Port de la Bourdonnais, 75007 Paris',cost:'Pass included',note:'1-hour audio cruise past Notre-Dame, Louvre, Orsay, bridges. Show pass at ticket desk before boarding.',lat:48.86,lng:2.2974},
     {name:'Musee d\'Orsay',time:'5:30pm',addr:'1 Rue de la Legion d\'Honneur, 75007 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK timed entry 1–2 weeks ahead. Open Fridays until 21:45 — use late slot to avoid day crowds. Impressionist masterpieces.'},
-    {name:'Dinner — Escargots & Onion Soup',time:'8:00pm',addr:'42 Place du Marche Saint-Honore, 75001 Paris',cost:'Pass included',note:'Classic French tasting dinner. Escargots or French onion soup + glass of wine.'}
+    {name:'Dinner — Escargots & Onion Soup',time:'8:00pm',addr:'42 Place du Marche Saint-Honore, 75001 Paris',cost:'Pass included',note:'Classic French tasting dinner. Escargots or French onion soup + glass of wine.',lat:48.867,lng:2.3325}
   ]},
   {date:'30 May',day:'Sat',label:'Ile de la Cite + Cheese Tasting',type:'paris',activities:[
-    {name:'Sainte-Chapelle',time:'9:30am',addr:'10 Boulevard du Palais, 75001 Paris',cost:'Pass included',note:'1,113 stained-glass windows. Morning light through the glass is extraordinary. Arrive early before crowds.'},
-    {name:'Notre-Dame exterior & Archaeological Crypt',time:'10:30am',addr:'7 Parvis Notre-Dame, 75004 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK 1–2 weeks ahead. Walk exterior of restored cathedral + underground Gallo-Roman ruins. Same island as Sainte-Chapelle — no travel needed.'},
-    {name:'Lunch — Croque Monsieur by the Seine',time:'1:00pm',addr:'1 Place du Chatelet, 75001 Paris',cost:'Pass included',note:'5-min walk from Notre-Dame. Croque monsieur + fries + kir royale. Friday lunch treat.'},
-    {name:'Cheese Tasting at O Chateau',time:'3:00pm',addr:'68 Rue Jean Jacques Rousseau, 75001 Paris',cost:'Pass included',note:'5 French cheeses + 1 glass of wine. Walk-in with pass. Expert-guided tasting.'},
-    {name:'Gin Distillery — Arbre Sec',time:'6:00pm',addr:'52 Rue de l\'Arbre Sec, 75001 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK via pass app. Same street as Les Caves du Louvre. Premium gin tasting + micro-distillery tour.'}
+    {name:'Sainte-Chapelle',time:'9:30am',addr:'10 Boulevard du Palais, 75001 Paris',cost:'Pass included',note:'1,113 stained-glass windows. Morning light through the glass is extraordinary. Arrive early before crowds.',lat:48.8554,lng:2.345},
+    {name:'Notre-Dame exterior & Archaeological Crypt',time:'10:30am',addr:'7 Parvis Notre-Dame, 75004 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK 1–2 weeks ahead. Walk exterior of restored cathedral + underground Gallo-Roman ruins. Same island as Sainte-Chapelle — no travel needed.',lat:48.853,lng:2.3499},
+    {name:'Lunch — Croque Monsieur by the Seine',time:'1:00pm',addr:'1 Place du Chatelet, 75001 Paris',cost:'Pass included',note:'5-min walk from Notre-Dame. Croque monsieur + fries + kir royale. Friday lunch treat.',lat:48.8582,lng:2.3469},
+    {name:'Cheese Tasting at O Chateau',time:'3:00pm',addr:'68 Rue Jean Jacques Rousseau, 75001 Paris',cost:'Pass included',note:'5 French cheeses + 1 glass of wine. Walk-in with pass. Expert-guided tasting.',lat:48.8624,lng:2.3459},
+    {name:'Gin Distillery — Arbre Sec',time:'6:00pm',addr:'52 Rue de l\'Arbre Sec, 75001 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK via pass app. Same street as Les Caves du Louvre. Premium gin tasting + micro-distillery tour.',lat:48.861,lng:2.3418}
   ]},
   {date:'31 May',day:'Sun',label:'Montmartre + Champagne',type:'paris',activities:[
-    {name:'Perfume Mini Workshop — Fragonard',time:'10:00am',addr:'3-5 Square de l\'Opera-Louis Jouvet, 75009 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK 2–3 weeks ahead. Saturday 10:00 English slot. Max 10 guests. Guided museum + 20-min perfume workshop. Take home 12ml eau de toilette.'},
-    {name:'Opera National — self-guided tour',time:'11:30am',addr:'Place de l\'Opera, 75009 Paris',cost:'Pass included',note:'Next door to Fragonard. Check Opera Garnier website that Sat 31 May is not a performance day before visiting.'},
-    {name:'Big Bus Blue Route to Montmartre',time:'1:00pm',addr:'Stop 1: 11 Avenue de l\'Opera (10-min walk from Fragonard)',cost:'Pass included',note:'Blue Route branches to Montmartre. Sacre-Coeur stop is HOP-OFF ONLY — cannot re-board there.'},
-    {name:'Petit Train de Montmartre',time:'1:30pm',addr:'Place du Tertre, Montmartre, 75018 Paris',cost:'Pass included',note:'Mini train through cobbled streets. Saves legs on the hill. Every 30 minutes.'},
-    {name:'Champagne Gourmand at Montmartre',time:'5:00pm',addr:'4 Place du Tertre, 75018 Paris',cost:'Pass included',note:'⚠️ Pass offer ONLY 14:00–19:00 daily. Glass of Champagne + French pastries. Views of Sacre-Coeur from the terrace.'},
-    {name:'Dinner — Oysters & Sparkling Wine',time:'7:30pm',addr:'Les Turbines, Paris (check pass app for address)',cost:'Pass included',note:'Oysters or salmon + sparkling wine. Elegant Saturday evening dinner.'}
+    {name:'Perfume Mini Workshop — Fragonard',time:'10:00am',addr:'3-5 Square de l\'Opera-Louis Jouvet, 75009 Paris',cost:'Pass included',note:'⚠️ PRE-BOOK 2–3 weeks ahead. Saturday 10:00 English slot. Max 10 guests. Guided museum + 20-min perfume workshop. Take home 12ml eau de toilette.',lat:48.8718,lng:2.3319},
+    {name:'Opera National — self-guided tour',time:'11:30am',addr:'Place de l\'Opera, 75009 Paris',cost:'Pass included',note:'Next door to Fragonard. Check Opera Garnier website that Sat 31 May is not a performance day before visiting.',lat:48.8719,lng:2.3316},
+    {name:'Big Bus Blue Route to Montmartre',time:'1:00pm',addr:'Stop 1: 11 Avenue de l\'Opera (10-min walk from Fragonard)',cost:'Pass included',note:'Blue Route branches to Montmartre. Sacre-Coeur stop is HOP-OFF ONLY — cannot re-board there.',lat:48.8656,lng:2.3321},
+    {name:'Petit Train de Montmartre',time:'1:30pm',addr:'Place du Tertre, Montmartre, 75018 Paris',cost:'Pass included',note:'Mini train through cobbled streets. Saves legs on the hill. Every 30 minutes.',lat:48.8867,lng:2.3431},
+    {name:'Champagne Gourmand at Montmartre',time:'5:00pm',addr:'4 Place du Tertre, 75018 Paris',cost:'Pass included',note:'⚠️ Pass offer ONLY 14:00–19:00 daily. Glass of Champagne + French pastries. Views of Sacre-Coeur from the terrace.',lat:48.8867,lng:2.3431},
+    {name:'Dinner — Oysters & Sparkling Wine',time:'7:30pm',addr:'Les Turbines, Paris (check pass app for address)',cost:'Pass included',note:'Oysters or salmon + sparkling wine. Elegant Saturday evening dinner.',lat:48.8742,lng:2.3412}
   ]},
   {date:'1 Jun',day:'Mon',label:'Versailles Full Day',type:'paris',activities:[
-    {name:'Depart for Versailles — RER C',time:'8:30am',addr:'RER C — alight Versailles Chateau Rive Gauche',cost:'RER ticket ~€4 (not in pass)',note:'Arrive by 09:00 to beat crowds. Buy RER C ticket separately or use Navigo card.'},
-    {name:'Palace of Versailles — full day',time:'9:00am',addr:'Place d\'Armes, 78000 Versailles',cost:'Pass included',note:'⚠️ PRE-BOOK 2–3 weeks ahead. Hall of Mirrors + King\'s Apartments + Marie Antoinette\'s Petit Trianon + fountain gardens. Bring water + snacks. Comfortable shoes essential.'},
-    {name:'Return to Paris',time:'6:30pm',addr:'Versailles Chateau Rive Gauche → RER C Paris',cost:'RER ticket ~€4',note:'RER C back to central Paris.'},
-    {name:'Light dinner after Versailles',time:'7:30pm',addr:'16 Rue Marbeuf, 75008 Paris (Bistro Marbeuf)',cost:'Pass included',note:'French sweet crepes. Keep it easy after a long day. Near hotel or any local brasserie.'}
+    {name:'Depart for Versailles — RER C',time:'8:30am',addr:'RER C — alight Versailles Chateau Rive Gauche',cost:'RER ticket ~€4 (not in pass)',note:'Arrive by 09:00 to beat crowds. Buy RER C ticket separately or use Navigo card.',lat:48.8566,lng:2.3522},
+    {name:'Palace of Versailles — full day',time:'9:00am',addr:'Place d\'Armes, 78000 Versailles',cost:'Pass included',note:'⚠️ PRE-BOOK 2–3 weeks ahead. Hall of Mirrors + King\'s Apartments + Marie Antoinette\'s Petit Trianon + fountain gardens. Bring water + snacks. Comfortable shoes essential.',lat:48.8049,lng:2.1204},
+    {name:'Return to Paris',time:'6:30pm',addr:'Versailles Chateau Rive Gauche → RER C Paris',cost:'RER ticket ~€4',note:'RER C back to central Paris.',lat:48.8049,lng:2.1204},
+    {name:'Light dinner after Versailles',time:'7:30pm',addr:'16 Rue Marbeuf, 75008 Paris (Bistro Marbeuf)',cost:'Pass included',note:'French sweet crepes. Keep it easy after a long day. Near hotel or any local brasserie.',lat:48.8706,lng:2.3046}
   ]},
   {date:'2 Jun',day:'Tue',label:'Louvre + Arc de Triomphe + Farewell',type:'paris',activities:[
-    {name:'Louvre Museum — Guided Tour',time:'10:00am',addr:'Rue de Rivoli, 75001 Paris (entrance via Pyramid)',cost:'Pass included',note:'⚠️ PRE-BOOK 3–4 weeks ahead. 2–2.5 hour guided tour. Must-sees: Mona Lisa, Venus de Milo, Winged Victory. Monday is open (closed Tuesdays).'},
-    {name:'Arc de Triomphe — Rooftop',time:'1:30pm',addr:'Place Charles de Gaulle, 75008 Paris',cost:'Pass included',note:'284 steps to rooftop. 12 avenues visible from the top. Use underground passage to access — do NOT cross the roundabout.'},
-    {name:'French Sweet Crepes — Bistro Marbeuf',time:'3:30pm',addr:'16 Rue Marbeuf, 75008 Paris',cost:'Pass included',note:'10-min walk from Arc de Triomphe. Classic French crepes near Champs-Elysees.'},
-    {name:'Farewell dinner — Charcuterie & Wine',time:'5:30pm',addr:'4 Rue Drouot, 75009 Paris (Club Cochon)',cost:'Pass included',note:'Charcuterie board + glass of wine. Monday is open (closed Sundays only). Final Paris dinner — savour it!'},
-    {name:'Eurostar depart Paris Gare du Nord',time:'7:11pm',addr:'Gare du Nord, Paris 75010',cost:'Booked',note:'⚠️ Depart 19:11. Arrive London St Pancras 20:30. Allow 45 min to reach Gare du Nord before departure. Pack and check out of hotel earlier in the day.'}
+    {name:'Louvre Museum — Guided Tour',time:'10:00am',addr:'Rue de Rivoli, 75001 Paris (entrance via Pyramid)',cost:'Pass included',note:'⚠️ PRE-BOOK 3–4 weeks ahead. 2–2.5 hour guided tour. Must-sees: Mona Lisa, Venus de Milo, Winged Victory. Monday is open (closed Tuesdays).',lat:48.8606,lng:2.3376},
+    {name:'Arc de Triomphe — Rooftop',time:'1:30pm',addr:'Place Charles de Gaulle, 75008 Paris',cost:'Pass included',note:'284 steps to rooftop. 12 avenues visible from the top. Use underground passage to access — do NOT cross the roundabout.',lat:48.8738,lng:2.295},
+    {name:'French Sweet Crepes — Bistro Marbeuf',time:'3:30pm',addr:'16 Rue Marbeuf, 75008 Paris',cost:'Pass included',note:'10-min walk from Arc de Triomphe. Classic French crepes near Champs-Elysees.',lat:48.8698,lng:2.3016},
+    {name:'Farewell dinner — Charcuterie & Wine',time:'5:30pm',addr:'4 Rue Drouot, 75009 Paris (Club Cochon)',cost:'Pass included',note:'Charcuterie board + glass of wine. Monday is open (closed Sundays only). Final Paris dinner — savour it!',lat:48.8762,lng:2.3435},
+    {name:'Eurostar depart Paris Gare du Nord',time:'7:11pm',addr:'Gare du Nord, Paris 75010',cost:'Booked',note:'⚠️ Depart 19:11. Arrive London St Pancras 20:30. Allow 45 min to reach Gare du Nord before departure. Pack and check out of hotel earlier in the day.',lat:48.8809,lng:2.3553}
   ]},
     {date:'3 Jun',day:'Wed',label:'Back in London',type:'rest',activities:[
     {name:'Rest & recover',time:'All day',addr:'Home',cost:'Free',note:'Rest after Paris trip. Arrived last night from Eurostar.'}
@@ -585,7 +835,7 @@ var guideData = [
    website:'https://boroughmarket.org.uk',
    summary:'One of London\'s oldest and most celebrated food markets, dating back to the 13th century. Located under the arches of London Bridge Station, it hosts over 100 stalls selling artisan produce, street food, cheeses, meats, and baked goods from around the world.',
    summaryZH:'波羅市場是倫敦最古老、最著名的食品市場之一，歷史可追溯至13世紀。市場位於倫敦橋車站的拱廊之下，設有超過100個攤位，售賣來自世界各地的手工農產品、街頭小食、芝士、肉類及烘焙食品。',
-   facts:[{l:'Location',v:'Southwark, SE1'},{l:'Open',v:'Mon–Sat (full market Thu–Sat)'},{l:'Entry',v:'Free'},{l:'Best time',v:'Weekday mornings'}],
+   facts:[{l:'Location',v:'Southwark, SE1',lat:51.5055,lng:-0.091},{l:'Open',v:'Mon–Sat (full market Thu–Sat)'},{l:'Entry',v:'Free'},{l:'Best time',v:'Weekday mornings'}],
    notes:'',img:null},
   {id:'kew',name:'Kew Gardens',cat:'Nature',city:'London',catColor:'#10b981',catBg:'#dcfce7',
    website:'https://www.kew.org',
@@ -597,13 +847,13 @@ var guideData = [
    website:'https://www.britishmuseum.org',
    summary:'Founded in 1753, the British Museum holds over 8 million objects spanning 2 million years of human history. Its highlights include the Rosetta Stone, the Elgin Marbles, Egyptian mummies, and the Lewis Chessmen. Admission is free.',
    summaryZH:'大英博物館成立於1753年，館藏超過800萬件文物，橫跨200萬年人類歷史。館內亮點包括羅塞塔石碑、艾爾金大理石雕塑、埃及木乃伊及劉易斯棋子。入場免費。',
-   facts:[{l:'Location',v:'Bloomsbury, WC1'},{l:'Open',v:'Daily 10am–5pm (Fri to 8:30pm)'},{l:'Entry',v:'Free'},{l:'Tube',v:'Holborn / Tottenham Court Rd'}],
+   facts:[{l:'Location',v:'Bloomsbury, WC1',lat:51.5194,lng:-0.127},{l:'Open',v:'Daily 10am–5pm (Fri to 8:30pm)'},{l:'Entry',v:'Free'},{l:'Tube',v:'Holborn / Tottenham Court Rd'}],
    notes:'',img:null},
   {id:'nhmn',name:'Natural History Museum',cat:'Museum',city:'London',catColor:'#8b5cf6',catBg:'#ede9fe',
    website:'https://www.nhm.ac.uk',
    summary:'A magnificent Romanesque building housing 80 million specimens covering 4.5 billion years of natural history. The famous Blue Whale skeleton in Hintze Hall, interactive dinosaur gallery, and the Darwin Centre make this one of London\'s most beloved free attractions.',
    summaryZH:'自然歷史博物館是一座壯觀的羅馬式建築，館藏8000萬件標本，涵蓋45億年自然歷史。辛茨大廳的藍鯨骨骼、互動式恐龍展廊及達爾文中心，令此館成為倫敦最受歡迎的免費景點之一。',
-   facts:[{l:'Location',v:'South Kensington, SW7'},{l:'Open',v:'Daily 10am–5:50pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'South Kensington'}],
+   facts:[{l:'Location',v:'South Kensington, SW7',lat:51.4967,lng:-0.1764},{l:'Open',v:'Daily 10am–5:50pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'South Kensington'}],
    notes:'',img:null},
   {id:'harrods',name:'Harrods',cat:'Shopping',city:'London',catColor:'#ec4899',catBg:'#fce7f3',
    website:'https://www.harrods.com',
@@ -621,7 +871,7 @@ var guideData = [
    website:'https://www.rct.uk/visit/the-state-rooms-buckingham-palace',
    summary:'The official London residence of the British monarch since 1837. The Changing of the Guard ceremony is one of London\'s most famous sights. The State Rooms are open to visitors in summer (Aug–Sep). The palace faces The Mall and St James\'s Park.',
    summaryZH:'白金漢宮自1837年起成為英國君主的倫敦正式官邸。衛兵換崗儀式是倫敦最著名的景觀之一。宮內國宴廳於夏季（8至9月）對外開放。宮殿正面朝向林蔭大道及聖詹姆士公園。',
-   facts:[{l:'Location',v:'Westminster, SW1'},{l:'Guard change',v:'Check royal.uk for schedule'},{l:'Outside',v:'Free'},{l:'Tube',v:'St James\'s Park / Victoria'}],
+   facts:[{l:'Location',v:'Westminster, SW1',lat:51.5014,lng:-0.1419},{l:'Guard change',v:'Check royal.uk for schedule'},{l:'Outside',v:'Free'},{l:'Tube',v:'St James\'s Park / Victoria'}],
    notes:'',img:null},
   {id:'oxford',name:'Oxford',cat:'Day Trip',city:'Oxford',catColor:'#6b7280',catBg:'#f3f4f6',
    website:'https://www.visitoxfordandoxfordshire.com',
@@ -655,12 +905,12 @@ var guideData = [
   {id:'british-museum',name:'British Museum',cat:'Museum',city:'London',catColor:'#8b5cf6',catBg:'#ede9fe',
    summary:'Founded in 1753, the British Museum holds over 8 million objects spanning 2 million years of human history. Its highlights include the Rosetta Stone, the Elgin Marbles, Egyptian mummies, and the Lewis Chessmen. Admission is free.',
    summaryZH:'大英博物館成立於1753年，館藏超過800萬件文物，橫跨200萬年人類歷史。館內亮點包括羅塞塔石碑、艾爾金大理石雕塑、埃及木乃伊及劉易斯棋子。入場免費。',
-   facts:[{l:'Location',v:'Bloomsbury, WC1'},{l:'Open',v:'Daily 10am–5pm (Fri to 8:30pm)'},{l:'Entry',v:'Free'},{l:'Tube',v:'Holborn / Tottenham Court Rd'}],
+   facts:[{l:'Location',v:'Bloomsbury, WC1',lat:51.5194,lng:-0.127},{l:'Open',v:'Daily 10am–5pm (Fri to 8:30pm)'},{l:'Entry',v:'Free'},{l:'Tube',v:'Holborn / Tottenham Court Rd'}],
    notes:'',img:null},
   {id:'nhmn',name:'Natural History Museum',cat:'Museum',city:'London',catColor:'#8b5cf6',catBg:'#ede9fe',
    summary:'A magnificent Romanesque building housing 80 million specimens covering 4.5 billion years of natural history. The famous Blue Whale skeleton in Hintze Hall, interactive dinosaur gallery, and the Darwin Centre make this one of London\'s most beloved free attractions.',
    summaryZH:'自然歷史博物館是一座壯觀的羅馬式建築，館藏8000萬件標本，涵蓋45億年自然歷史。辛茨大廳的藍鯨骨骼、互動式恐龍展廊及達爾文中心，令此館成為倫敦最受歡迎的免費景點之一。',
-   facts:[{l:'Location',v:'South Kensington, SW7'},{l:'Open',v:'Daily 10am–5:50pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'South Kensington'}],
+   facts:[{l:'Location',v:'South Kensington, SW7',lat:51.4967,lng:-0.1764},{l:'Open',v:'Daily 10am–5:50pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'South Kensington'}],
    notes:'',img:null},
   {id:'harrods',name:'Harrods',cat:'Shopping',city:'London',catColor:'#ec4899',catBg:'#fce7f3',
    summary:'Established in 1849, Harrods is the world\'s most famous department store. Its seven floors cover 1 million square feet. The stunning Egyptian Hall food hall is an attraction in itself — even if you\'re just window shopping, the building and displays are worth seeing.',
@@ -690,7 +940,7 @@ var guideData = [
    website:'https://www.sainte-chapelle.fr/en',
    summary:'A stunning Gothic chapel on Île de la Cité, famous for its 1,113 stained-glass windows covering nearly every wall. Built in 1248 to house Christ\'s Crown of Thorns. Morning light through the windows is extraordinary — arrive early before the crowds arrive. Located on the same island as Notre-Dame, just a 5-minute walk away.',
    summaryZH:'聖禮拜堂是巴黎西堤島上一座令人嘆為觀止的哥德式小教堂，以1,113扇彩色玻璃窗聞名，建於1248年。清晨陽光穿透玻璃窗的景象極為震撼，建議早到以避開人群。距巴黎聖母院步行僅5分鐘。',
-   facts:[{l:'Location',v:'10 Blvd du Palais, 75001'},{l:'Open',v:'Daily 09:00–19:00 (Apr–Sep)'},{l:'Entry',v:'Pass included'},{l:'Tip',v:'Morning light is best'}],
+   facts:[{l:'Location',v:'10 Blvd du Palais, 75001',lat:48.8554,lng:2.345},{l:'Open',v:'Daily 09:00–19:00 (Apr–Sep)'},{l:'Entry',v:'Pass included'},{l:'Tip',v:'Morning light is best'}],
    notes:'',img:null},
   {id:'notre-dame',name:'Notre-Dame & Archaeological Crypt',cat:'Landmark',city:'Paris',catColor:'#3b82f6',catBg:'#dbeafe',
    website:'https://www.notredamedeparis.fr/en/',
@@ -1078,7 +1328,7 @@ function renderDay(i){
   var bg=typeBg[d.type]||'';
 
   var html='<div style="'+bg+'">';
-  if(d.type==='suggestion') html+='<div style="font-size:13px;color:#b45309;background:#fef3c7;padding:8px 12px;border-radius:9px;margin-bottom:12px">💡 Suggested — feel free to swap for your own plan!</div>';
+
   html+='<div class="day-header-row"><div><div class="day-big-title">'+d.date+' · '+d.day+'</div>';
   html+='<div style="display:flex;align-items:center;gap:6px;margin-top:2px">';
   html+='<input id="sublabel-'+i+'" value="'+d.label+'" onblur="saveDayLabel('+i+',this.value)" onkeydown="if(event.key===String.fromCharCode(13))this.blur()" style="border:none;border-bottom:1.5px solid var(--gold);background:transparent;font-size:14px;color:var(--muted);font-family:var(--font-body);outline:none;width:160px;padding:1px 2px">';
@@ -1088,7 +1338,7 @@ function renderDay(i){
   var typeClasses={rest:'pace-light',sightseeing:'pace-med',food:'pace-light',travel:'pace-travel',paris:'pace-full',suggestion:'pace-med'};
   var typeOpts=typeOptions.map(function(t){return '<option value="'+t+'"'+(t===d.type?' selected':'')+'>'+typeNames[t]+'</option>';}).join('');
   html+='<select onchange="saveDayType('+i+',this.value)" class="pace-pill '+(typeClasses[d.type]||'pace-med')+'" style="border:none;cursor:pointer;font-family:var(--font-body);font-size:12px;font-weight:500;padding:4px 8px;border-radius:20px;-webkit-appearance:none;appearance:none;">'+typeOpts+'</select></div>';
-  html+='<div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center">Hold &amp; drag to reorder · tap ✏ to edit</div>';
+  html += '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center">Hold &amp; drag to reorder &middot; tap to edit</div>';
   html+='<div class="timeline" id="tl-'+i+'">';
 
   d.activities.forEach(function(act,j){
@@ -1188,6 +1438,43 @@ function bindDrag(di){
 }
 
 // ─── BUDGET ──────────────────────────────────────────────────────────────────
+
+function loadParisWeather(){
+  var el = document.getElementById('paris-weather-box');
+  if(!el) return;
+  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var today = new Date();
+  var codes=[2,0,61,1,3,80,2], hi=[21,23,19,22,20,18,21], lo=[12,13,11,14,12,11,13];
+  var html='<div class="weather-grid">';
+  for(var i=0;i<7;i++){
+    var d=new Date(today); d.setDate(today.getDate()+i);
+    html+='<div class="w-day"><div class="w-date">'+dn[d.getDay()]+'<br>'+d.getDate()+'/'+(d.getMonth()+1)+'</div>';
+    html+='<div class="w-icon" style="display:flex;justify-content:center;margin:5px 0 3px">'+wCode2Icon(codes[i])+'</div>';
+    html+='<div class="w-hi">'+hi[i]+'°</div><div class="w-lo">'+lo[i]+'°</div>';
+    html+='<div style="font-size:9px;color:var(--muted);margin-top:2px">'+wCode2Desc(codes[i])+'</div></div>';
+  }
+  html+='</div><div style="font-size:11px;color:var(--muted);text-align:right;margin-top:6px"><span id="paris-wx-src">📅 Typical May forecast</span></div>';
+  el.innerHTML=html;
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/Paris&forecast_days=7')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var live='<div class="weather-grid">';
+      for(var i=0;i<7;i++){
+        var dt=new Date(data.daily.time[i]);
+        live+='<div class="w-day"><div class="w-date">'+dn[dt.getDay()]+'<br>'+dt.getDate()+'/'+(dt.getMonth()+1)+'</div>';
+        live+='<div class="w-icon" style="display:flex;justify-content:center;margin:5px 0 3px">'+wCode2Icon(data.daily.weathercode[i])+'</div>';
+        live+='<div class="w-hi">'+Math.round(data.daily.temperature_2m_max[i])+'°</div>';
+        live+='<div class="w-lo">'+Math.round(data.daily.temperature_2m_min[i])+'°</div>';
+        live+='<div style="font-size:9px;color:var(--muted);margin-top:2px">'+wCode2Desc(data.daily.weathercode[i])+'</div></div>';
+      }
+      live+='</div><div style="font-size:11px;color:var(--muted);text-align:right;margin-top:6px">📡 Live · Open-Meteo</div>';
+      el.innerHTML=live;
+    }).catch(function(){
+      var s=document.getElementById('paris-wx-src');
+      if(s) s.textContent='📅 Typical May forecast for Paris';
+    });
+}
+
 function loadFX(){
   fetch('https://api.exchangerate-api.com/v4/latest/GBP')
     .then(function(r){return r.json();})
@@ -1708,6 +1995,7 @@ function renderBuyList(){
   el.innerHTML = html;
 }
 
+
 // ─── TAB SWITCH ──────────────────────────────────────────────────────────────
 function switchTab(t){
   document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
@@ -1725,6 +2013,7 @@ renderPackList();
 renderBuyList();
 showTip(0);
 loadWeather();
+loadParisWeather();
 loadFX();
 buildDayScroll();
 buildCatGrid();
@@ -1766,230 +2055,5 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 
 
 </script>
-
-<!-- Firebase ES Module — runs after main script, UI already rendered -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-const FBCFG = {
-  apiKey:            "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
-  authDomain:        "silent-bicycle-92418-671fb.firebaseapp.com",
-  databaseURL:       "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:         "silent-bicycle-92418-671fb",
-  storageBucket:     "silent-bicycle-92418-671fb.firebasestorage.app",
-  messagingSenderId: "171163448108",
-  appId:             "1:171163448108:web:1c3661dbfb514af2c4b289"
-};
-
-// ── Sync status helper — directly touches DOM, no cross-script call ──────────
-function syncUI(state, msg) {
-  var dot = document.getElementById("sync-dot");
-  var lbl = document.getElementById("sync-label");
-  if (dot) dot.className = "sync-dot" + (state === "syncing" ? " syncing" : state === "offline" ? " offline" : "");
-  if (lbl) lbl.textContent = msg || "";
-}
-
-try {
-  const app     = initializeApp(FBCFG);
-  const db      = getDatabase(app);
-  const tripRef = ref(db, "tripData");
-
-  syncUI("syncing", "Connecting…");
-
-  // ── Save to Firebase (debounced 800ms) ─────────────────────────────────────
-  let saveTimer = null;
-  window._fbSave = function () {
-    clearTimeout(saveTimer);
-    syncUI("syncing", "Saving…");
-    saveTimer = setTimeout(function () {
-      try {
-        console.log('[Trip2026] Firebase save triggered');
-        // Guide notes
-        var gn = {};
-        (window.guideData || []).forEach(function (g) {
-          gn[String(g.id)] = { notes: g.notes || "", img: g.img || null };
-        });
-        // Itinerary edits
-        var ie = {};
-        (window.itinerary || []).forEach(function (d, i) {
-          ie[i] = { activities: d.activities, label: d.label, type: d.type };
-        });
-        // Flight edits
-        var fe = {};
-        (window.flights || []).forEach(function (f) {
-          fe[f.id] = { num: f.num, dep: f.dep, arr: f.arr, terminal: f.terminal, gate: f.gate, cabin: f.cabin };
-        });
-        // Accom edits
-        var ae = {};
-        (window.accoms || []).forEach(function (a) {
-          ae[a.id] = { name: a.name, addr: a.addr, nearTube: a.nearTube, checkin: a.checkin, wifi: a.wifi };
-        });
-
-        var payload = {
-          expenses:    window.expenses    || [],
-          buyItems:    window.buyItems    || [],
-          packItems:   window.packItems   || [],
-          catTotals:   window.catTotals   || {},
-          customEmerg: window.customEmerg || [],
-          budgetMax:   (document.getElementById("budget-max") || {}).value || "3000",
-          guideNotes:  gn,
-          guideCustom: (window.guideData || []).filter(function (g) { return String(g.id).indexOf("custom-") === 0; }),
-          itinEdits:   ie,
-          flightEdits: fe,
-          accomEdits:  ae
-        };
-
-        set(tripRef, payload)
-          .then(function ()  { syncUI("online", "🟢 Live"); console.log('[Trip2026] Saved OK'); })
-          .catch(function (e) { syncUI("offline", "⚠️ Offline"); console.error("[Trip2026] FB save FAILED:", e); });
-      } catch (e) {
-        console.error("_fbSave error:", e);
-      }
-    }, 800);
-  };
-
-  // ── Live listener — merges cloud data on top of local defaults ──────────────
-  onValue(tripRef, function (snap) {
-    try {
-      var val = snap.val();
-      console.log('[Trip2026] Firebase onValue fired, has data:', !!val);
-      if (!val) { syncUI("online", "🟢 Ready"); return; }
-
-      // Expenses — mutate in place so local var reference stays valid
-      if (Array.isArray(val.expenses)) {
-        window.expenses.length = 0;
-        val.expenses.forEach(function (e) { window.expenses.push(e); });
-      }
-      // Category totals
-      if (val.catTotals && typeof val.catTotals === "object") {
-        Object.keys(window.catTotals).forEach(function (k) { window.catTotals[k] = 0; });
-        Object.keys(val.catTotals).forEach(function (k) { window.catTotals[k] = val.catTotals[k]; });
-      }
-      // Emergency contacts
-      if (Array.isArray(val.customEmerg)) {
-        window.customEmerg.length = 0;
-        val.customEmerg.forEach(function (e) { window.customEmerg.push(e); });
-      }
-      // Buy list
-      if (Array.isArray(val.buyItems)) {
-        window.buyItems.length = 0;
-        val.buyItems.forEach(function(e){ window.buyItems.push(e); });
-        buyItems = window.buyItems;
-        if (typeof renderBuyList === "function") renderBuyList();
-      }
-      // Packing list
-      if (Array.isArray(val.packItems)) {
-        window.packItems.length = 0;
-        val.packItems.forEach(function(e){ window.packItems.push(e); });
-        if (typeof renderPackList === "function") renderPackList();
-renderBuyList();
-      }
-      // Budget max
-      if (val.budgetMax) {
-        var bm = document.getElementById("budget-max");
-        if (bm) bm.value = val.budgetMax;
-      }
-      // Guide notes — patch into existing objects
-      if (val.guideNotes && typeof val.guideNotes === "object") {
-        Object.keys(val.guideNotes).forEach(function (id) {
-          var g = (window.guideData || []).find(function (x) { return String(x.id) === String(id); });
-          if (g) { g.notes = val.guideNotes[id].notes || ""; g.img = val.guideNotes[id].img || null; }
-        });
-      }
-      // Custom guide cards added by user
-      if (Array.isArray(val.guideCustom)) {
-        val.guideCustom.forEach(function (g) {
-          if (!(window.guideData || []).find(function (x) { return String(x.id) === String(g.id); }))
-            window.guideData.push(g);
-        });
-      }
-      // Flight edits (only non-empty fields)
-      if (val.flightEdits && typeof val.flightEdits === "object") {
-        Object.keys(val.flightEdits).forEach(function (fid) {
-          var f = (window.flights || []).find(function (x) { return x.id === fid; });
-          if (!f) return;
-          var e = val.flightEdits[fid];
-          if (e.num)      f.num      = e.num;
-          if (e.dep)      f.dep      = e.dep;
-          if (e.arr)      f.arr      = e.arr;
-          if (e.terminal) f.terminal = e.terminal;
-          if (e.gate)     f.gate     = e.gate;
-          if (e.cabin)    f.cabin    = e.cabin;
-        });
-      }
-      // Accom edits
-      if (val.accomEdits && typeof val.accomEdits === "object") {
-        Object.keys(val.accomEdits).forEach(function (aid) {
-          var a = (window.accoms || []).find(function (x) { return x.id === aid; });
-          if (!a) return;
-          var e = val.accomEdits[aid];
-          if (e.name)     a.name     = e.name;
-          if (e.addr)     a.addr     = e.addr;
-          if (e.nearTube) a.nearTube = e.nearTube;
-          if (e.checkin)  a.checkin  = e.checkin;
-          if (e.wifi)     a.wifi     = e.wifi;
-        });
-      }
-      // Itinerary activity edits
-      if (val.itinEdits && typeof val.itinEdits === "object") {
-        var editCount = Object.keys(val.itinEdits).length;
-        console.log('[Trip2026] Restoring itinEdits for', editCount, 'days');
-        Object.keys(val.itinEdits).forEach(function (di) {
-          var idx = parseInt(di);
-          var day = val.itinEdits[di];
-          if (window.itinerary[idx] && day) {
-            if (Array.isArray(day.activities)) window.itinerary[idx].activities = day.activities;
-            if (day.label) window.itinerary[idx].label = day.label;
-            if (day.type)  window.itinerary[idx].type  = day.type;
-          }
-        });
-      }
-
-      // Re-render all affected sections (each wrapped so one crash won't stop others)
-      var reRenders = [
-        function(){ if(typeof renderFlights      ==="function") renderFlights(); },
-        function(){ if(typeof renderAccoms       ==="function") renderAccoms(); },
-        function(){ if(typeof renderEmerg        ==="function") renderEmerg(); },
-        function(){ if(typeof renderExpenses     ==="function") renderExpenses(); },
-        function(){ if(typeof buildCatGrid       ==="function") buildCatGrid(); },
-        function(){ if(typeof refreshBudget      ==="function") refreshBudget(); },
-        function(){ if(typeof renderPayerSummary ==="function") renderPayerSummary(); },
-        function(){ if(typeof renderGuide        ==="function"){ var qs=document.querySelector(".guide-search"); renderGuide(qs?qs.value:""); } },
-        function(){
-          // Rebuild day scroll chips (labels/types may have changed)
-          // then re-render current day (not always day 0)
-          if(typeof buildDayScroll==="function" && typeof renderDay==="function"){
-            var saved = typeof currentDayIdx !== "undefined" ? currentDayIdx : 0;
-            buildDayScroll();
-            // restore previously selected day
-            if(saved > 0 && saved < window.itinerary.length) selectDay(saved);
-          }
-        }
-      ];
-      reRenders.forEach(function(fn){ try{ fn(); } catch(e){ console.warn("render error:", e.message); } });
-
-      syncUI("online", "🟢 Live");
-    } catch (e) {
-      console.error("onValue handler error:", e);
-      syncUI("offline", "⚠️ Error");
-    }
-  }, function (err) {
-    syncUI("offline", "⚠️ Offline");
-    console.error("Firebase listener error:", err);
-  });
-
-} catch (e) {
-  if (!navigator.onLine) {
-    syncUI("offline", "📴 Offline mode");
-  } else {
-    syncUI("offline", "⚠️ Sync error");
-  }
-  console.warn("[Trip2026] Firebase:", e.message);
-}
-</script>
-
-
-
 </body>
 </html>
