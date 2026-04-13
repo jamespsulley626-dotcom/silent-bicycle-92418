@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <link rel="manifest" href="data:application/json,{
@@ -399,235 +400,6 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
 
 
 </script>
-
-<!-- Firebase ES Module — runs after main script, UI already rendered -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-const FBCFG = {
-  apiKey:            "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
-  authDomain:        "silent-bicycle-92418-671fb.firebaseapp.com",
-  databaseURL:       "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:         "silent-bicycle-92418-671fb",
-  storageBucket:     "silent-bicycle-92418-671fb.firebasestorage.app",
-  messagingSenderId: "171163448108",
-  appId:             "1:171163448108:web:1c3661dbfb514af2c4b289"
-};
-
-// ── Sync status helper — directly touches DOM, no cross-script call ──────────
-function syncUI(state, msg) {
-  var dot = document.getElementById("sync-dot");
-  var lbl = document.getElementById("sync-label");
-  if (dot) dot.className = "sync-dot" + (state === "syncing" ? " syncing" : state === "offline" ? " offline" : "");
-  if (lbl) lbl.textContent = msg || "";
-}
-
-try {
-  const app     = initializeApp(FBCFG);
-  const db      = getDatabase(app);
-  const tripRef = ref(db, "tripData");
-
-  syncUI("syncing", "Connecting…");
-
-  // ── Save to Firebase (debounced 800ms) ─────────────────────────────────────
-  let saveTimer = null;
-  window._fbSave = function () {
-    clearTimeout(saveTimer);
-    syncUI("syncing", "Saving…");
-    saveTimer = setTimeout(function () {
-      try {
-        console.log('[Trip2026] Firebase save triggered');
-        // Guide notes
-        var gn = {};
-        (window.guideData || []).forEach(function (g) {
-          gn[String(g.id)] = { notes: g.notes || "", img: g.img || null };
-        });
-        // Itinerary edits
-        var ie = {};
-        (window.itinerary || []).forEach(function (d, i) {
-          ie[i] = { activities: d.activities, label: d.label, type: d.type };
-        });
-        // Flight edits
-        var fe = {};
-        (window.flights || []).forEach(function (f) {
-          fe[f.id] = { num: f.num, dep: f.dep, arr: f.arr, terminal: f.terminal, gate: f.gate, cabin: f.cabin };
-        });
-        // Accom edits
-        var ae = {};
-        (window.accoms || []).forEach(function (a) {
-          ae[a.id] = { name: a.name, addr: a.addr, nearTube: a.nearTube, checkin: a.checkin, wifi: a.wifi };
-        });
-
-        var payload = {
-          expenses:    window.expenses    || [],
-          buyItems:    window.buyItems    || [],
-          packItems:   window.packItems   || [],
-          catTotals:   window.catTotals   || {},
-          customEmerg: window.customEmerg || [],
-          budgetMax:   (document.getElementById("budget-max") || {}).value || "3000",
-          guideNotes:  gn,
-          guideCustom: (window.guideData || []).filter(function (g) { return String(g.id).indexOf("custom-") === 0; }),
-          itinEdits:   ie,
-          flightEdits: fe,
-          accomEdits:  ae
-        };
-
-        set(tripRef, payload)
-          .then(function ()  { syncUI("online", "🟢 Live"); console.log('[Trip2026] Saved OK'); })
-          .catch(function (e) { syncUI("offline", "⚠️ Offline"); console.error("[Trip2026] FB save FAILED:", e); });
-      } catch (e) {
-        console.error("_fbSave error:", e);
-      }
-    }, 800);
-  };
-
-  // ── Live listener — merges cloud data on top of local defaults ──────────────
-  onValue(tripRef, function (snap) {
-    try {
-      var val = snap.val();
-      console.log('[Trip2026] Firebase onValue fired, has data:', !!val);
-      if (!val) { syncUI("online", "🟢 Ready"); return; }
-
-      // Expenses — mutate in place so local var reference stays valid
-      if (Array.isArray(val.expenses)) {
-        window.expenses.length = 0;
-        val.expenses.forEach(function (e) { window.expenses.push(e); });
-      }
-      // Category totals
-      if (val.catTotals && typeof val.catTotals === "object") {
-        Object.keys(window.catTotals).forEach(function (k) { window.catTotals[k] = 0; });
-        Object.keys(val.catTotals).forEach(function (k) { window.catTotals[k] = val.catTotals[k]; });
-      }
-      // Emergency contacts
-      if (Array.isArray(val.customEmerg)) {
-        window.customEmerg.length = 0;
-        val.customEmerg.forEach(function (e) { window.customEmerg.push(e); });
-      }
-      // Buy list
-      if (Array.isArray(val.buyItems)) {
-        window.buyItems.length = 0;
-        val.buyItems.forEach(function(e){ window.buyItems.push(e); });
-        buyItems = window.buyItems;
-        if (typeof renderBuyList === "function") renderBuyList();
-      }
-      // Packing list
-      if (Array.isArray(val.packItems)) {
-        window.packItems.length = 0;
-        val.packItems.forEach(function(e){ window.packItems.push(e); });
-        if (typeof renderPackList === "function") renderPackList();
-renderBuyList();
-      }
-      // Budget max
-      if (val.budgetMax) {
-        var bm = document.getElementById("budget-max");
-        if (bm) bm.value = val.budgetMax;
-      }
-      // Guide notes — patch into existing objects
-      if (val.guideNotes && typeof val.guideNotes === "object") {
-        Object.keys(val.guideNotes).forEach(function (id) {
-          var g = (window.guideData || []).find(function (x) { return String(x.id) === String(id); });
-          if (g) { g.notes = val.guideNotes[id].notes || ""; g.img = val.guideNotes[id].img || null; }
-        });
-      }
-      // Custom guide cards added by user
-      if (Array.isArray(val.guideCustom)) {
-        val.guideCustom.forEach(function (g) {
-          if (!(window.guideData || []).find(function (x) { return String(x.id) === String(g.id); }))
-            window.guideData.push(g);
-        });
-      }
-      // Flight edits (only non-empty fields)
-      if (val.flightEdits && typeof val.flightEdits === "object") {
-        Object.keys(val.flightEdits).forEach(function (fid) {
-          var f = (window.flights || []).find(function (x) { return x.id === fid; });
-          if (!f) return;
-          var e = val.flightEdits[fid];
-          if (e.num)      f.num      = e.num;
-          if (e.dep)      f.dep      = e.dep;
-          if (e.arr)      f.arr      = e.arr;
-          if (e.terminal) f.terminal = e.terminal;
-          if (e.gate)     f.gate     = e.gate;
-          if (e.cabin)    f.cabin    = e.cabin;
-        });
-      }
-      // Accom edits
-      if (val.accomEdits && typeof val.accomEdits === "object") {
-        Object.keys(val.accomEdits).forEach(function (aid) {
-          var a = (window.accoms || []).find(function (x) { return x.id === aid; });
-          if (!a) return;
-          var e = val.accomEdits[aid];
-          if (e.name)     a.name     = e.name;
-          if (e.addr)     a.addr     = e.addr;
-          if (e.nearTube) a.nearTube = e.nearTube;
-          if (e.checkin)  a.checkin  = e.checkin;
-          if (e.wifi)     a.wifi     = e.wifi;
-        });
-      }
-      // Itinerary activity edits
-      if (val.itinEdits && typeof val.itinEdits === "object") {
-        var editCount = Object.keys(val.itinEdits).length;
-        console.log('[Trip2026] Restoring itinEdits for', editCount, 'days');
-        Object.keys(val.itinEdits).forEach(function (di) {
-          var idx = parseInt(di);
-          var day = val.itinEdits[di];
-          if (window.itinerary[idx] && day) {
-            if (Array.isArray(day.activities)) window.itinerary[idx].activities = day.activities;
-            if (day.label) window.itinerary[idx].label = day.label;
-            if (day.type)  window.itinerary[idx].type  = day.type;
-          }
-        });
-      }
-
-      // Re-enforce paris type for 28 May–2 Jun (overrides any cloud data)
-      var _pd = ['28 May','29 May','30 May','31 May','1 Jun','2 Jun'];
-      (window.itinerary||[]).forEach(function(day){
-        if(_pd.indexOf(day.date) !== -1) day.type = 'paris';
-      });
-      // Re-render all affected sections (each wrapped so one crash won't stop others)
-      var reRenders = [
-        function(){ if(typeof renderFlights      ==="function") renderFlights(); },
-        function(){ if(typeof renderAccoms       ==="function") renderAccoms(); },
-        function(){ if(typeof renderEmerg        ==="function") renderEmerg(); },
-        function(){ if(typeof renderExpenses     ==="function") renderExpenses(); },
-        function(){ if(typeof buildCatGrid       ==="function") buildCatGrid(); },
-        function(){ if(typeof refreshBudget      ==="function") refreshBudget(); },
-        function(){ if(typeof renderPayerSummary ==="function") renderPayerSummary(); },
-        function(){ if(typeof renderGuide        ==="function"){ var qs=document.querySelector(".guide-search"); renderGuide(qs?qs.value:""); } },
-        function(){
-          // Rebuild day scroll chips (labels/types may have changed)
-          // then re-render current day (not always day 0)
-          if(typeof buildDayScroll==="function" && typeof renderDay==="function"){
-            var saved = typeof currentDayIdx !== "undefined" ? currentDayIdx : 0;
-            buildDayScroll();
-            // restore previously selected day
-            if(saved > 0 && saved < window.itinerary.length) selectDay(saved);
-          }
-        }
-      ];
-      reRenders.forEach(function(fn){ try{ fn(); } catch(e){ console.warn("render error:", e.message); } });
-
-      syncUI("online", "🟢 Live");
-    } catch (e) {
-      console.error("onValue handler error:", e);
-      syncUI("offline", "⚠️ Error");
-    }
-  }, function (err) {
-    syncUI("offline", "⚠️ Offline");
-    console.error("Firebase listener error:", err);
-  });
-
-} catch (e) {
-  if (!navigator.onLine) {
-    syncUI("offline", "📴 Offline mode");
-  } else {
-    syncUI("offline", "⚠️ Sync error");
-  }
-  console.warn("[Trip2026] Firebase:", e.message);
-}
-</script>
-
-
 
 <script>
 
@@ -2054,6 +1826,233 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 
 
 
+</script>
+
+<!-- Firebase ES Module — runs after main script, UI already rendered -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const FBCFG = {
+  apiKey:            "AIzaSyD2WgR059Nqhv-Db0pICzCnGshzyP8nclY",
+  authDomain:        "silent-bicycle-92418-671fb.firebaseapp.com",
+  databaseURL:       "https://silent-bicycle-92418-671fb-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "silent-bicycle-92418-671fb",
+  storageBucket:     "silent-bicycle-92418-671fb.firebasestorage.app",
+  messagingSenderId: "171163448108",
+  appId:             "1:171163448108:web:1c3661dbfb514af2c4b289"
+};
+
+// ── Sync status helper — directly touches DOM, no cross-script call ──────────
+function syncUI(state, msg) {
+  var dot = document.getElementById("sync-dot");
+  var lbl = document.getElementById("sync-label");
+  if (dot) dot.className = "sync-dot" + (state === "syncing" ? " syncing" : state === "offline" ? " offline" : "");
+  if (lbl) lbl.textContent = msg || "";
+}
+
+try {
+  const app     = initializeApp(FBCFG);
+  const db      = getDatabase(app);
+  const tripRef = ref(db, "tripData");
+
+  syncUI("syncing", "Connecting…");
+
+  // ── Save to Firebase (debounced 800ms) ─────────────────────────────────────
+  let saveTimer = null;
+  window._fbSave = function () {
+    clearTimeout(saveTimer);
+    syncUI("syncing", "Saving…");
+    saveTimer = setTimeout(function () {
+      try {
+        console.log('[Trip2026] Firebase save triggered');
+        // Guide notes
+        var gn = {};
+        (window.guideData || []).forEach(function (g) {
+          gn[String(g.id)] = { notes: g.notes || "", img: g.img || null };
+        });
+        // Itinerary edits
+        var ie = {};
+        (window.itinerary || []).forEach(function (d, i) {
+          ie[i] = { activities: d.activities, label: d.label, type: d.type };
+        });
+        // Flight edits
+        var fe = {};
+        (window.flights || []).forEach(function (f) {
+          fe[f.id] = { num: f.num, dep: f.dep, arr: f.arr, terminal: f.terminal, gate: f.gate, cabin: f.cabin };
+        });
+        // Accom edits
+        var ae = {};
+        (window.accoms || []).forEach(function (a) {
+          ae[a.id] = { name: a.name, addr: a.addr, nearTube: a.nearTube, checkin: a.checkin, wifi: a.wifi };
+        });
+
+        var payload = {
+          expenses:    window.expenses    || [],
+          buyItems:    window.buyItems    || [],
+          packItems:   window.packItems   || [],
+          catTotals:   window.catTotals   || {},
+          customEmerg: window.customEmerg || [],
+          budgetMax:   (document.getElementById("budget-max") || {}).value || "3000",
+          guideNotes:  gn,
+          guideCustom: (window.guideData || []).filter(function (g) { return String(g.id).indexOf("custom-") === 0; }),
+          itinEdits:   ie,
+          flightEdits: fe,
+          accomEdits:  ae
+        };
+
+        set(tripRef, payload)
+          .then(function ()  { syncUI("online", "🟢 Live"); console.log('[Trip2026] Saved OK'); })
+          .catch(function (e) { syncUI("offline", "⚠️ Offline"); console.error("[Trip2026] FB save FAILED:", e); });
+      } catch (e) {
+        console.error("_fbSave error:", e);
+      }
+    }, 800);
+  };
+
+  // ── Live listener — merges cloud data on top of local defaults ──────────────
+  onValue(tripRef, function (snap) {
+    try {
+      var val = snap.val();
+      console.log('[Trip2026] Firebase onValue fired, has data:', !!val);
+      if (!val) { syncUI("online", "🟢 Ready"); return; }
+
+      // Expenses — mutate in place so local var reference stays valid
+      if (Array.isArray(val.expenses)) {
+        window.expenses.length = 0;
+        val.expenses.forEach(function (e) { window.expenses.push(e); });
+      }
+      // Category totals
+      if (val.catTotals && typeof val.catTotals === "object") {
+        Object.keys(window.catTotals).forEach(function (k) { window.catTotals[k] = 0; });
+        Object.keys(val.catTotals).forEach(function (k) { window.catTotals[k] = val.catTotals[k]; });
+      }
+      // Emergency contacts
+      if (Array.isArray(val.customEmerg)) {
+        window.customEmerg.length = 0;
+        val.customEmerg.forEach(function (e) { window.customEmerg.push(e); });
+      }
+      // Buy list
+      if (Array.isArray(val.buyItems)) {
+        window.buyItems.length = 0;
+        val.buyItems.forEach(function(e){ window.buyItems.push(e); });
+        buyItems = window.buyItems;
+        if (typeof renderBuyList === "function") renderBuyList();
+      }
+      // Packing list
+      if (Array.isArray(val.packItems)) {
+        window.packItems.length = 0;
+        val.packItems.forEach(function(e){ window.packItems.push(e); });
+        if (typeof renderPackList === "function") renderPackList();
+renderBuyList();
+      }
+      // Budget max
+      if (val.budgetMax) {
+        var bm = document.getElementById("budget-max");
+        if (bm) bm.value = val.budgetMax;
+      }
+      // Guide notes — patch into existing objects
+      if (val.guideNotes && typeof val.guideNotes === "object") {
+        Object.keys(val.guideNotes).forEach(function (id) {
+          var g = (window.guideData || []).find(function (x) { return String(x.id) === String(id); });
+          if (g) { g.notes = val.guideNotes[id].notes || ""; g.img = val.guideNotes[id].img || null; }
+        });
+      }
+      // Custom guide cards added by user
+      if (Array.isArray(val.guideCustom)) {
+        val.guideCustom.forEach(function (g) {
+          if (!(window.guideData || []).find(function (x) { return String(x.id) === String(g.id); }))
+            window.guideData.push(g);
+        });
+      }
+      // Flight edits (only non-empty fields)
+      if (val.flightEdits && typeof val.flightEdits === "object") {
+        Object.keys(val.flightEdits).forEach(function (fid) {
+          var f = (window.flights || []).find(function (x) { return x.id === fid; });
+          if (!f) return;
+          var e = val.flightEdits[fid];
+          if (e.num)      f.num      = e.num;
+          if (e.dep)      f.dep      = e.dep;
+          if (e.arr)      f.arr      = e.arr;
+          if (e.terminal) f.terminal = e.terminal;
+          if (e.gate)     f.gate     = e.gate;
+          if (e.cabin)    f.cabin    = e.cabin;
+        });
+      }
+      // Accom edits
+      if (val.accomEdits && typeof val.accomEdits === "object") {
+        Object.keys(val.accomEdits).forEach(function (aid) {
+          var a = (window.accoms || []).find(function (x) { return x.id === aid; });
+          if (!a) return;
+          var e = val.accomEdits[aid];
+          if (e.name)     a.name     = e.name;
+          if (e.addr)     a.addr     = e.addr;
+          if (e.nearTube) a.nearTube = e.nearTube;
+          if (e.checkin)  a.checkin  = e.checkin;
+          if (e.wifi)     a.wifi     = e.wifi;
+        });
+      }
+      // Itinerary activity edits
+      if (val.itinEdits && typeof val.itinEdits === "object") {
+        var editCount = Object.keys(val.itinEdits).length;
+        console.log('[Trip2026] Restoring itinEdits for', editCount, 'days');
+        Object.keys(val.itinEdits).forEach(function (di) {
+          var idx = parseInt(di);
+          var day = val.itinEdits[di];
+          if (window.itinerary[idx] && day) {
+            if (Array.isArray(day.activities)) window.itinerary[idx].activities = day.activities;
+            if (day.label) window.itinerary[idx].label = day.label;
+            if (day.type)  window.itinerary[idx].type  = day.type;
+          }
+        });
+      }
+
+      // Re-enforce paris type for 28 May–2 Jun (overrides any cloud data)
+      var _pd = ['28 May','29 May','30 May','31 May','1 Jun','2 Jun'];
+      (window.itinerary||[]).forEach(function(day){
+        if(_pd.indexOf(day.date) !== -1) day.type = 'paris';
+      });
+      // Re-render all affected sections (each wrapped so one crash won't stop others)
+      var reRenders = [
+        function(){ if(typeof renderFlights      ==="function") renderFlights(); },
+        function(){ if(typeof renderAccoms       ==="function") renderAccoms(); },
+        function(){ if(typeof renderEmerg        ==="function") renderEmerg(); },
+        function(){ if(typeof renderExpenses     ==="function") renderExpenses(); },
+        function(){ if(typeof buildCatGrid       ==="function") buildCatGrid(); },
+        function(){ if(typeof refreshBudget      ==="function") refreshBudget(); },
+        function(){ if(typeof renderPayerSummary ==="function") renderPayerSummary(); },
+        function(){ if(typeof renderGuide        ==="function"){ var qs=document.querySelector(".guide-search"); renderGuide(qs?qs.value:""); } },
+        function(){
+          // Rebuild day scroll chips (labels/types may have changed)
+          // then re-render current day (not always day 0)
+          if(typeof buildDayScroll==="function" && typeof renderDay==="function"){
+            var saved = typeof currentDayIdx !== "undefined" ? currentDayIdx : 0;
+            buildDayScroll();
+            // restore previously selected day
+            if(saved > 0 && saved < window.itinerary.length) selectDay(saved);
+          }
+        }
+      ];
+      reRenders.forEach(function(fn){ try{ fn(); } catch(e){ console.warn("render error:", e.message); } });
+
+      syncUI("online", "🟢 Live");
+    } catch (e) {
+      console.error("onValue handler error:", e);
+      syncUI("offline", "⚠️ Error");
+    }
+  }, function (err) {
+    syncUI("offline", "⚠️ Offline");
+    console.error("Firebase listener error:", err);
+  });
+
+} catch (e) {
+  if (!navigator.onLine) {
+    syncUI("offline", "📴 Offline mode");
+  } else {
+    syncUI("offline", "⚠️ Sync error");
+  }
+  console.warn("[Trip2026] Firebase:", e.message);
+}
 </script>
 </body>
 </html>
