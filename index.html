@@ -221,6 +221,18 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
 .guide-upload label:hover{border-color:var(--gold);color:var(--gold);}
 .guide-upload input{display:none;}
 .guide-uploaded-img{width:100%;max-height:180px;object-fit:cover;border-radius:9px;margin-top:8px;display:block;}
+
+.top10-btn{width:100%;margin-top:12px;padding:11px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:6px;}
+.top10-btn:hover{opacity:.9;}
+.top10-item{display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--border);}
+.top10-item:last-child{border-bottom:none;}
+.top10-num{width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.top10-img{width:90px;height:70px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#e5e7eb;}
+.top10-info{flex:1;min-width:0;}
+.top10-name{font-weight:600;font-size:14px;color:var(--navy);line-height:1.3;}
+.top10-room{font-size:11px;color:var(--gold);font-weight:500;margin-top:2px;}
+.top10-desc{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.55;}
+.top10-zh{font-size:12px;color:#6d28d9;margin-top:4px;line-height:1.6;font-family:'PingFang TC','Microsoft JhengHei',sans-serif;}
 @media(min-width:600px){
   .exp-form{flex-direction:row;flex-wrap:wrap;}
   .exp-form input[name=desc]{flex:2;min-width:160px;}
@@ -238,6 +250,7 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
     <div>
       <h1>Trip 2026</h1>
       <p>13 May — 15 Jun · London &amp; Paris</p>
+      <p id="countdown" style="font-size:12px;color:var(--gold);margin-top:4px;font-weight:500;letter-spacing:.03em;font-family:-apple-system,sans-serif;">倒數出發：計算中…</p>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <span id="sync-label" style="font-size:11px;color:rgba(255,255,255,.5)">Connecting…</span>
@@ -353,7 +366,7 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
       <input type="text" id="exp-payer" placeholder="Who paid? (optional)">
       <select id="exp-cat">
         <option>Transport</option><option>Food</option><option>Attractions</option>
-        <option>Shopping</option><option>Accommodation</option><option>Other</option>
+        <option>Shopping</option><option>Other</option>
       </select>
     </div>
     <button class="btn-add-exp" onclick="addExp()">+ Add Expense</button>
@@ -382,26 +395,14 @@ select.pace-pill{border:none;cursor:pointer;outline:none;}
   </div>
 </div>
 
- = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
-} // end if(!window._patchedFns)
-
-
-// Firebase sync handled by ES module below
-
-
-
-
-
-
-
-
-
-
-
-
-</script>
-
 <script>
+
+
+
+
+
+
+
 
 
 
@@ -620,7 +621,19 @@ var guideData = [
    summary:'Founded in 1753, the British Museum holds over 8 million objects spanning 2 million years of human history. Its highlights include the Rosetta Stone, the Elgin Marbles, Egyptian mummies, and the Lewis Chessmen. Admission is free.',
    summaryZH:'大英博物館成立於1753年，館藏超過800萬件文物，橫跨200萬年人類歷史。館內亮點包括羅塞塔石碑、艾爾金大理石雕塑、埃及木乃伊及劉易斯棋子。入場免費。',
    facts:[{l:'Location',v:'Bloomsbury, WC1',lat:51.5194,lng:-0.127},{l:'Open',v:'Daily 10am–5pm (Fri to 8:30pm)'},{l:'Entry',v:'Free'},{l:'Tube',v:'Holborn / Tottenham Court Rd'}],
-   notes:'',img:null},
+   notes:'',img:null,
+   top10:[
+     {name:'Rosetta Stone',zh:'羅塞塔石碑',room:'Room 4, Ground Floor',desc:'The key that unlocked Ancient Egyptian hieroglyphics. Carved in 196 BC with the same decree in three scripts. One of the most visited objects in the world.',zhDesc:'解讀古埃及象形文字的關鍵。公元前196年以三種文字刻寫同一詔令，是全球最多人參觀的文物之一。',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Rosetta_Stone.JPG/400px-Rosetta_Stone.JPG'},
+     {name:'Elgin Marbles (Parthenon sculptures)',zh:'艾爾金大理石雕塑（帕德嫩神廟）',room:'Room 18, Ground Floor',desc:'Stunning 5th-century BC sculptures from the Parthenon in Athens. Friezes, metopes and figures that once decorated one of the greatest temples ever built.',zhDesc:'來自雅典帕德嫩神廟的公元前5世紀精美雕塑，包括橫飾帶、間板及雕像，曾裝飾史上最偉大的神廟之一。',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Elgin_Marbles_-_south_metopes_-_Room_18_-_British_Museum_-_190312.jpg/400px-Elgin_Marbles_-_south_metopes_-_Room_18_-_British_Museum_-_190312.jpg'},
+     {name:'Egyptian Mummies',zh:'埃及木乃伊',room:'Rooms 62-63, Upper Floor',desc:'Over 100 human and animal mummies. The mummy of Katebet (1300 BC) is particularly striking, still wearing her golden headdress and bead collar.',zhDesc:'館內藏有逾100具人類及動物木乃伊。公元前1300年的卡特貝特木乃伊尤為震撼，至今仍戴著金色頭飾及串珠項圈。',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/EgyptianMummyBritishMuseum.jpg/400px-EgyptianMummyBritishMuseum.jpg'},
+     {name:'Lewis Chessmen',zh:'劉易斯棋子',room:'Room 40, Ground Floor',desc:'Twelve 12th-century chess pieces carved from walrus ivory, found in Scotland in 1831. Their expressive faces and detailed carving make them endlessly fascinating.',zhDesc:'12件12世紀以海象牙雕刻的棋子，1831年在蘇格蘭出土。生動的表情與精細雕工令人百看不厭。',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Lewis_chessmen_-_overview.jpg/400px-Lewis_chessmen_-_overview.jpg'},
+     {name:'Sutton Hoo Helmet',zh:'薩頓胡頭盔',room:'Room 41, Ground Floor',desc:'An iconic Anglo-Saxon warrior helmet from around AD 625, found in a royal ship burial in Suffolk. Reconstructed from over 500 fragments, it is a symbol of early medieval England.',zhDesc:'約公元625年的盎格魯-薩克遜武士頭盔，出土於薩福克郡皇家船葬。由逾500碎片重組而成，是英格蘭中世紀早期的標誌性文物。',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Sutton_Hoo_helmet_reconstructed.jpg/400px-Sutton_Hoo_helmet_reconstructed.jpg'},
+     {name:'Lindow Man',zh:'林道人',room:'Room 50, Ground Floor',desc:'A remarkably preserved 2,000-year-old bog body discovered in Cheshire in 1984. His last meal, cause of death, and possible ritual sacrifice are still debated by scholars.',zhDesc:'1984年在柴郡發現的保存完好的2,000年前泥炭人。他的最後一餐、死因及可能的祭祀儀式至今仍是學術討論焦點。',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Lindow_Man_-_British_Museum.jpg/400px-Lindow_Man_-_British_Museum.jpg'},
+     {name:'Warren Cup',zh:'沃倫杯',room:'Room 70, Ground Floor',desc:'A solid silver Roman drinking cup from around AD 15, featuring exquisitely detailed scenes of same-sex love. One of the finest pieces of Roman silver ever found.',zhDesc:'約公元15年的純銀羅馬飲酒杯，刻有精緻的同性愛情場景，是迄今出土最精美的羅馬銀器之一。',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Warren_Cup_British_Museum.jpg/400px-Warren_Cup_British_Museum.jpg'},
+     {name:'Oxus Treasure',zh:'阿姆河寶藏',room:'Room 52, Upper Floor',desc:'A hoard of 170 gold and silver objects from the Persian Achaemenid Empire (550-330 BC), including figurines, armlets, and a gold model chariot. The most important collection of Achaemenid metalwork in existence.',zhDesc:'波斯阿契美尼德帝國（公元前550-330年）的170件金銀器珍寶，包括人物像、臂環及金製戰車模型，是現存最重要的阿契美尼德金屬工藝收藏。',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Oxus_Treasure_chariot_model_BM.jpg/400px-Oxus_Treasure_chariot_model_BM.jpg'},
+     {name:'Assyrian Lion Hunt Reliefs',zh:'亞述獵獅浮雕',room:'Room 10, Ground Floor',desc:'Dramatic 7th-century BC carvings from the palace of King Ashurbanipal in Nineveh. The lions depicted are so lifelike that these are considered among the greatest animal sculptures ever made.',zhDesc:'公元前7世紀亞述王亞述巴尼帕爾尼尼微宮殿的壯觀雕刻，獅子形態栩栩如生，被公認為史上最偉大的動物雕塑之一。',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/British_Museum_lion_hunt.jpg/400px-British_Museum_lion_hunt.jpg'},
+     {name:'Jericho Skull',zh:'耶利哥頭骨',room:'Room 57, Upper Floor',desc:'One of the oldest portraits ever made — a 9,000-year-old human skull plastered and painted to resemble a living face. Found in ancient Jericho, it reveals the earliest known ancestor veneration.',zhDesc:'史上最古老的肖像之一——一個9,000年前以灰泥塑形並彩繪成生人面容的人類頭骨，出土於古耶利哥，揭示了已知最早的祖先崇拜習俗。',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Jericho_skull%2C_British_Museum.jpg/400px-Jericho_skull%2C_British_Museum.jpg'}
+   ]},
   {id:'nhmn',name:'Natural History Museum',cat:'Museum',city:'London',catColor:'#8b5cf6',catBg:'#ede9fe',
    website:'https://www.nhm.ac.uk',
    summary:'A magnificent Romanesque building housing 80 million specimens covering 4.5 billion years of natural history. The famous Blue Whale skeleton in Hintze Hall, interactive dinosaur gallery, and the Darwin Centre make this one of London\'s most beloved free attractions.',
@@ -669,27 +682,6 @@ var guideData = [
    summaryZH:'凡爾賽宮是法國皇室自1682至1789年的政治權力中心。鏡廳、御殿及廣闊的法式庭園令人歎為觀止。這座宮殿原為狩獵行宮，後由路易十四改建成皇權的終極象徵。',
    facts:[{l:'Location',v:'78000 Versailles'},{l:'Open',v:'Tue–Sun 9am–5:30pm'},{l:'Entry',v:'€20/adult (gardens free)'},{l:'Train',v:'RER C from Paris ~40min'}],
    notes:'',img:null},
-  {id:'kew',name:'Kew Gardens',cat:'Nature',city:'London',catColor:'#10b981',catBg:'#dcfce7',
-   summary:'The Royal Botanic Gardens at Kew is a UNESCO World Heritage Site spanning 132 hectares. Home to the world\'s largest collection of living plants, including the iconic Victorian Palm House glasshouse, the Treetop Walkway, and thousands of species from every continent.',
-   summaryZH:'邱園（皇家植物園）是聯合國教科文組織世界遺產，佔地132公頃。園內擁有全球最大的活植物收藏，包括標誌性的維多利亞時代棕櫚屋玻璃溫室、樹頂步道，以及來自世界各大洲的數千種植物。',
-   facts:[{l:'Location',v:'Richmond, TW9'},{l:'Open',v:'Daily 10am–dusk'},{l:'Entry',v:'£22/adult'},{l:'Tube',v:'District Line to Kew'}],
-   notes:'',img:null},
-  {id:'british-museum',name:'British Museum',cat:'Museum',city:'London',catColor:'#8b5cf6',catBg:'#ede9fe',
-   summary:'Founded in 1753, the British Museum holds over 8 million objects spanning 2 million years of human history. Its highlights include the Rosetta Stone, the Elgin Marbles, Egyptian mummies, and the Lewis Chessmen. Admission is free.',
-   summaryZH:'大英博物館成立於1753年，館藏超過800萬件文物，橫跨200萬年人類歷史。館內亮點包括羅塞塔石碑、艾爾金大理石雕塑、埃及木乃伊及劉易斯棋子。入場免費。',
-   facts:[{l:'Location',v:'Bloomsbury, WC1',lat:51.5194,lng:-0.127},{l:'Open',v:'Daily 10am–5pm (Fri to 8:30pm)'},{l:'Entry',v:'Free'},{l:'Tube',v:'Holborn / Tottenham Court Rd'}],
-   notes:'',img:null},
-  {id:'nhmn',name:'Natural History Museum',cat:'Museum',city:'London',catColor:'#8b5cf6',catBg:'#ede9fe',
-   summary:'A magnificent Romanesque building housing 80 million specimens covering 4.5 billion years of natural history. The famous Blue Whale skeleton in Hintze Hall, interactive dinosaur gallery, and the Darwin Centre make this one of London\'s most beloved free attractions.',
-   summaryZH:'自然歷史博物館是一座壯觀的羅馬式建築，館藏8000萬件標本，涵蓋45億年自然歷史。辛茨大廳的藍鯨骨骼、互動式恐龍展廊及達爾文中心，令此館成為倫敦最受歡迎的免費景點之一。',
-   facts:[{l:'Location',v:'South Kensington, SW7',lat:51.4967,lng:-0.1764},{l:'Open',v:'Daily 10am–5:50pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'South Kensington'}],
-   notes:'',img:null},
-  {id:'harrods',name:'Harrods',cat:'Shopping',city:'London',catColor:'#ec4899',catBg:'#fce7f3',
-   summary:'Established in 1849, Harrods is the world\'s most famous department store. Its seven floors cover 1 million square feet. The stunning Egyptian Hall food hall is an attraction in itself — even if you\'re just window shopping, the building and displays are worth seeing.',
-   summaryZH:'哈羅德百貨創立於1849年，是全球最著名的百貨公司。七層樓的面積達100萬平方呎。即使只是逛逛不消費，壯觀的埃及廳美食廣場及華麗的裝潢本身已值得一看。',
-   facts:[{l:'Location',v:'Knightsbridge, SW1'},{l:'Open',v:'Mon–Sat 10am–9pm, Sun 12–6pm'},{l:'Entry',v:'Free'},{l:'Tube',v:'Knightsbridge'}],
-   notes:'',img:null},
-  // ── Paris Attractions ─────────────────────────────────────────────────────
   {id:'eiffel-climb',name:'Eiffel Tower',cat:'Landmark',city:'Paris',catColor:'#3b82f6',catBg:'#dbeafe',
    website:'https://www.toureiffel.paris/en',
    summary:'Built in 1889 for the World\'s Fair by Gustave Eiffel, the tower stands 330 metres tall. The guided climb to the 2nd floor covers ~700 steps and is included with the Paris Pass. Book the evening dusk slot for the most spectacular views over Paris. Pre-book 4–6 weeks ahead — this is the first thing to book.',
@@ -1427,6 +1419,11 @@ function renderGuideCard(g){
   h+='</div>';
   h+='<textarea class="guide-notes-area" id="gnote-'+g.id+'" placeholder="Type your notes here…" oninput="saveGuideNote(\''+g.id+'\',this.value)">'+g.notes+'</textarea>';
   h+='<button onclick="saveGuideNote(\''+g.id+'\',document.getElementById(\'gnote-'+g.id+'\').value)" style="margin-top:8px;width:100%;padding:9px;background:var(--navy);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font-body)">💾 Save Note</button>';
+  if(g.top10 && g.top10.length){
+    h+='<button class="top10-btn" onclick="openTop10(\''+g.id+'\')">';
+    h+='🏆 Top '+g.top10.length+' Things to See';
+    h+='</button>';
+  }
   h+='<div class="guide-upload"><label><span>📷 Upload a photo or screenshot</span><input type="file" accept="image/*" onchange="uploadGuideImg(\''+g.id+'\',this)"></label>';
   if(g.img) h+='<img class="guide-uploaded-img" src="'+g.img+'" alt="uploaded">';
   h+='</div>';
@@ -1768,6 +1765,50 @@ function renderBuyList(){
 }
 
 
+
+// ─── COUNTDOWN ────────────────────────────────────────────────────────────────
+function updateCountdown(){
+  var el = document.getElementById('countdown');
+  if(!el) return;
+  var target = new Date('2026-05-13T00:00:00'); // Departure: 13 May 2026
+  var now = new Date();
+  var diff = target - now;
+  if(diff <= 0){
+    el.textContent = '✈ 出發了！祝旅途愉快！';
+    el.style.color = '#4ade80';
+    return;
+  }
+  var days    = Math.floor(diff / (1000*60*60*24));
+  var hours   = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+  var minutes = Math.floor((diff % (1000*60*60)) / (1000*60));
+  var seconds = Math.floor((diff % (1000*60)) / 1000);
+  el.textContent = '倒數出發：' + days + '天 ' + hours + '小時 ' + minutes + '分 ' + seconds + '秒';
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+
+function openTop10(id){
+  var g = guideData.find(function(x){ return x.id === id; });
+  if(!g || !g.top10) return;
+  var html = '<h3 style="font-family:var(--font-display);font-size:20px;margin-bottom:4px">'+g.name+'</h3>';
+  html += '<p style="font-size:13px;color:var(--muted);margin-bottom:18px">🏆 Top '+g.top10.length+' Things to See</p>';
+  g.top10.forEach(function(item, i){
+    html += '<div class="top10-item">';
+    html += '<div class="top10-num">'+(i+1)+'</div>';
+    html += '<img class="top10-img" src="'+item.img+'" alt="'+item.name+'">';
+    html += '<div class="top10-info">';
+    html += '<div class="top10-name">'+item.name+'</div>';
+    html += '<div class="top10-zh">'+item.zh+'</div>';
+    html += '<div class="top10-room">📍 '+item.room+'</div>';
+    html += '<div class="top10-desc">'+item.desc+'</div>';
+    html += '<div class="top10-zh" style="margin-top:5px;color:var(--muted)">'+item.zhDesc+'</div>';
+    html += '</div></div>';
+  });
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+
 // ─── TAB SWITCH ──────────────────────────────────────────────────────────────
 function switchTab(t){
   document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
@@ -1814,6 +1855,66 @@ addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
 
 
 // Firebase sync handled by ES module below
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ─── TAB SWITCH ──────────────────────────────────────────────────────────────
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+  document.querySelectorAll('.top-nav-btn').forEach(function(x){x.classList.remove('active');});
+  document.getElementById('tab-'+t).classList.add('active');
+  var idx={general:0,itinerary:1,budget:2,guide:3}[t];
+  document.querySelectorAll('.top-nav-btn')[idx].classList.add('active');
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+renderFlights();
+renderAccoms();
+renderEmerg();
+renderPackList();
+renderBuyList();
+showTip(0);
+loadWeather();
+loadParisWeather();
+loadFX();
+buildDayScroll();
+buildCatGrid();
+refreshBudget();
+renderExpenses();
+buildGuideFilters();
+renderGuide('');
+
+// Patch all mutating functions to trigger Firebase save (runs once only)
+if(!window._patchedFns){
+window._patchedFns = true;
+var _fns = ['saveAct','addAct','deleteActivity','saveAccom','applyFlightInline','delExp','saveEmerg','saveGuideNote','saveNewGuide','saveEditGuide'];
+_fns.forEach(function(name){
+  var orig = window[name];
+  if(typeof orig==='function'){
+    window[name] = function(){
+      var r = orig.apply(this, arguments);
+      if(window._fbSave) window._fbSave();
+      return r;
+    };
+  }
+});
+var _origAddExp2 = addExp;
+addExp = function(){ _origAddExp2(); if(window._fbSave) window._fbSave(); };
+} // end if(!window._patchedFns)
+
+
+// Firebase sync handled by ES module below
+
 
 
 
